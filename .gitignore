@@ -1,0 +1,50 @@
+# Environment
+.env
+.env.local
+*.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# Node
+node_modules/
+dist/
+build/
+.npm/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Logs
+*.log
+
+# Docker
+.docker/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+
+# Secrets / keys
+*.pem
+*.key
+*.crt
+id_rsa
+id_rsa.pub
+
+# User/private data
+data/
+uploads/
+private/
+real-cv/
+real-applications/
