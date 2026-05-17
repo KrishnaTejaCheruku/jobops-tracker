@@ -1,0 +1,44 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: jobops-postgres
+    environment:
+      POSTGRES_DB: jobops
+      POSTGRES_USER: jobops
+      POSTGRES_PASSWORD: jobops_dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - jobops_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jobops -d jobops"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - jobops-net
+
+  backend:
+    build:
+      context: ../../apps/backend
+      dockerfile: Dockerfile
+    container_name: jobops-backend
+    environment:
+      APP_NAME: jobops-tracker
+      APP_ENV: development
+      BACKEND_PORT: 8000
+      DATABASE_URL: postgresql://jobops:jobops_dev_password@postgres:5432/jobops
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - jobops-net
+
+volumes:
+  jobops_postgres_data:
+
+networks:
+  jobops-net:
+    driver: bridge
