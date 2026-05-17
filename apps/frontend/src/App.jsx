@@ -24,6 +24,8 @@ const sourceOptions = [
   "Other",
 ];
 
+const workModeOptions = ["Remote", "Hybrid", "On-site"];
+
 const emptyForm = {
   job_title: "",
   company_name: "",
@@ -48,6 +50,7 @@ const emptyFilters = {
   status: "All",
   priority: "All",
   source: "All",
+  work_mode: "All",
 };
 
 function normalizeApplicationForForm(application) {
@@ -71,12 +74,41 @@ function normalizeApplicationForForm(application) {
   };
 }
 
+function buildApplicationQuery(filters) {
+  const params = new URLSearchParams();
+
+  if (filters.search.trim() !== "") {
+    params.set("search", filters.search.trim());
+  }
+
+  if (filters.status !== "All") {
+    params.set("status", filters.status);
+  }
+
+  if (filters.priority !== "All") {
+    params.set("priority", filters.priority);
+  }
+
+  if (filters.source !== "All") {
+    params.set("source", filters.source);
+  }
+
+  if (filters.work_mode !== "All") {
+    params.set("work_mode", filters.work_mode);
+  }
+
+  const query = params.toString();
+
+  return query ? `?${query}` : "";
+}
+
 function App() {
   const [form, setForm] = useState(emptyForm);
   const [filters, setFilters] = useState(emptyFilters);
   const [applications, setApplications] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [listLoading, setListLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
@@ -93,57 +125,31 @@ function App() {
     };
   }, [applications]);
 
-  const filteredApplications = useMemo(() => {
-    const searchTerm = filters.search.trim().toLowerCase();
+  async function fetchApplications(activeFilters = filters) {
+    setListLoading(true);
+    setError("");
 
-    return applications.filter((application) => {
-      const searchableText = [
-        application.job_title,
-        application.company_name,
-        application.location,
-        application.work_mode,
-        application.status,
-        application.priority,
-        application.source,
-        application.cv_version,
-        application.salary_range,
-        application.recruiter_name,
-        application.recruiter_email,
-        application.job_description,
-        application.notes,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-
-      const matchesSearch = searchTerm === "" || searchableText.includes(searchTerm);
-      const matchesStatus = filters.status === "All" || application.status === filters.status;
-      const matchesPriority =
-        filters.priority === "All" || application.priority === filters.priority;
-      const matchesSource = filters.source === "All" || application.source === filters.source;
-
-      return matchesSearch && matchesStatus && matchesPriority && matchesSource;
-    });
-  }, [applications, filters]);
-
-  async function fetchApplications() {
     try {
-      const response = await fetch(`${API_BASE_URL}/applications`);
+      const query = buildApplicationQuery(activeFilters);
+      const response = await fetch(`${API_BASE_URL}/applications${query}`);
 
       if (!response.ok) {
-        throw new Error("Failed to load applications");
+        const errorBody = await response.json();
+        throw new Error(errorBody.error || "Failed to load applications");
       }
 
       const data = await response.json();
       setApplications(data);
     } catch (err) {
       setError(err.message);
+    } finally {
+      setListLoading(false);
     }
   }
 
   useEffect(() => {
-    fetchApplications();
-  }, []);
+    fetchApplications(filters);
+  }, [filters]);
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -215,7 +221,7 @@ function App() {
       setForm(emptyForm);
       setEditingId(null);
       setMessage(isEditing ? "Application updated successfully." : "Application saved successfully.");
-      await fetchApplications();
+      await fetchApplications(filters);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -236,7 +242,8 @@ function App() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to delete application");
+        const errorBody = await response.json();
+        throw new Error(errorBody.error || "Failed to delete application");
       }
 
       if (editingId === id) {
@@ -244,7 +251,7 @@ function App() {
       }
 
       setMessage("Application deleted.");
-      await fetchApplications();
+      await fetchApplications(filters);
     } catch (err) {
       setError(err.message);
     }
@@ -263,7 +270,7 @@ function App() {
       </section>
 
       <section className="summary-grid">
-        <SummaryCard label="Total Applications" value={summary.total} />
+        <SummaryCard label="Visible Applications" value={summary.total} />
         <SummaryCard label="Applied" value={summary.applied} />
         <SummaryCard label="Interviews" value={summary.interviews} />
         <SummaryCard label="High Priority" value={summary.highPriority} />
@@ -345,9 +352,9 @@ function App() {
             <label>
               Work Mode
               <select name="work_mode" value={form.work_mode} onChange={handleChange}>
-                <option>Remote</option>
-                <option>Hybrid</option>
-                <option>On-site</option>
+                {workModeOptions.map((workMode) => (
+                  <option key={workMode}>{workMode}</option>
+                ))}
               </select>
             </label>
 
@@ -465,10 +472,15 @@ function App() {
             <div>
               <h2>Applications</h2>
               <p className="muted">
-                Showing {filteredApplications.length} of {applications.length}
+                Showing {applications.length} result{applications.length === 1 ? "" : "s"}
+                {listLoading ? "..." : ""}
               </p>
             </div>
-            <button type="button" className="secondary" onClick={fetchApplications}>
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => fetchApplications(filters)}
+            >
               Refresh
             </button>
           </div>
@@ -518,6 +530,20 @@ function App() {
               </select>
             </label>
 
+            <label>
+              Work Mode
+              <select
+                name="work_mode"
+                value={filters.work_mode}
+                onChange={handleFilterChange}
+              >
+                <option>All</option>
+                {workModeOptions.map((workMode) => (
+                  <option key={workMode}>{workMode}</option>
+                ))}
+              </select>
+            </label>
+
             <button type="button" className="secondary clear-filters" onClick={clearFilters}>
               Clear Filters
             </button>
@@ -538,7 +564,7 @@ function App() {
                 </tr>
               </thead>
               <tbody>
-                {filteredApplications.map((application) => (
+                {applications.map((application) => (
                   <tr key={application.id}>
                     <td>
                       {application.job_url ? (
@@ -592,14 +618,6 @@ function App() {
                 ))}
 
                 {applications.length === 0 && (
-                  <tr>
-                    <td colSpan="8" className="empty">
-                      No applications yet. Add your first one.
-                    </td>
-                  </tr>
-                )}
-
-                {applications.length > 0 && filteredApplications.length === 0 && (
                   <tr>
                     <td colSpan="8" className="empty">
                       No applications match the current filters.

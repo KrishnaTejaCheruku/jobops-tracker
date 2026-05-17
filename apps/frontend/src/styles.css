@@ -349,3 +349,7 @@ button.small {
     grid-template-columns: 1fr;
   }
 }
+
+.filters {
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto;
+}
