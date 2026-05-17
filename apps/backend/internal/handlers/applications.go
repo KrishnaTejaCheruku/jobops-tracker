@@ -6,6 +6,7 @@ import (
 
 	"github.com/KrishnaTejaCheruku/jobops-tracker/apps/backend/internal/models"
 	"github.com/KrishnaTejaCheruku/jobops-tracker/apps/backend/internal/repository"
+	"github.com/KrishnaTejaCheruku/jobops-tracker/apps/backend/internal/validation"
 	"github.com/gin-gonic/gin"
 )
 
@@ -55,6 +56,11 @@ func (h *ApplicationHandler) CreateApplication(c *gin.Context) {
 		return
 	}
 
+	if err := validation.ValidateCreateApplication(req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
 	application, err := h.Repo.Create(c.Request.Context(), req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -73,6 +79,11 @@ func (h *ApplicationHandler) UpdateApplication(c *gin.Context) {
 	var req models.UpdateApplicationRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := validation.ValidateUpdateApplication(req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
