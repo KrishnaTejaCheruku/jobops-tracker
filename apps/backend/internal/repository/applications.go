@@ -13,26 +13,71 @@ type ApplicationRepository struct {
 	DB *pgxpool.Pool
 }
 
+type applicationScanner interface {
+	Scan(dest ...any) error
+}
+
 func NewApplicationRepository(db *pgxpool.Pool) *ApplicationRepository {
 	return &ApplicationRepository{DB: db}
 }
 
+func scanApplication(scanner applicationScanner) (*models.Application, error) {
+	var app models.Application
+
+	err := scanner.Scan(
+		&app.ID,
+		&app.JobTitle,
+		&app.CompanyName,
+		&app.Source,
+		&app.JobURL,
+		&app.Location,
+		&app.WorkMode,
+		&app.Status,
+		&app.CVVersion,
+		&app.SalaryRange,
+		&app.FollowUpDate,
+		&app.RecruiterName,
+		&app.RecruiterEmail,
+		&app.JobDescription,
+		&app.Priority,
+		&app.Notes,
+		&app.AppliedDate,
+		&app.CreatedAt,
+		&app.UpdatedAt,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &app, nil
+}
+
+const applicationSelectColumns = `
+	id,
+	job_title,
+	company_name,
+	source,
+	job_url,
+	location,
+	work_mode,
+	status,
+	cv_version,
+	salary_range,
+	COALESCE(TO_CHAR(follow_up_date, 'YYYY-MM-DD'), '') AS follow_up_date,
+	recruiter_name,
+	recruiter_email,
+	job_description,
+	priority,
+	notes,
+	COALESCE(TO_CHAR(applied_date, 'YYYY-MM-DD'), '') AS applied_date,
+	created_at,
+	updated_at
+`
+
 func (r *ApplicationRepository) List(ctx context.Context) ([]models.Application, error) {
 	rows, err := r.DB.Query(ctx, `
-		SELECT
-			id,
-			job_title,
-			company_name,
-			source,
-			job_url,
-			location,
-			work_mode,
-			status,
-			cv_version,
-			notes,
-			COALESCE(TO_CHAR(applied_date, 'YYYY-MM-DD'), '') AS applied_date,
-			created_at,
-			updated_at
+		SELECT `+applicationSelectColumns+`
 		FROM applications
 		ORDER BY created_at DESC
 	`)
@@ -44,67 +89,23 @@ func (r *ApplicationRepository) List(ctx context.Context) ([]models.Application,
 	applications := []models.Application{}
 
 	for rows.Next() {
-		var app models.Application
-
-		if err := rows.Scan(
-			&app.ID,
-			&app.JobTitle,
-			&app.CompanyName,
-			&app.Source,
-			&app.JobURL,
-			&app.Location,
-			&app.WorkMode,
-			&app.Status,
-			&app.CVVersion,
-			&app.Notes,
-			&app.AppliedDate,
-			&app.CreatedAt,
-			&app.UpdatedAt,
-		); err != nil {
+		app, err := scanApplication(rows)
+		if err != nil {
 			return nil, err
 		}
 
-		applications = append(applications, app)
+		applications = append(applications, *app)
 	}
 
 	return applications, rows.Err()
 }
 
 func (r *ApplicationRepository) GetByID(ctx context.Context, id int64) (*models.Application, error) {
-	var app models.Application
-
-	err := r.DB.QueryRow(ctx, `
-		SELECT
-			id,
-			job_title,
-			company_name,
-			source,
-			job_url,
-			location,
-			work_mode,
-			status,
-			cv_version,
-			notes,
-			COALESCE(TO_CHAR(applied_date, 'YYYY-MM-DD'), '') AS applied_date,
-			created_at,
-			updated_at
+	app, err := scanApplication(r.DB.QueryRow(ctx, `
+		SELECT `+applicationSelectColumns+`
 		FROM applications
 		WHERE id = $1
-	`, id).Scan(
-		&app.ID,
-		&app.JobTitle,
-		&app.CompanyName,
-		&app.Source,
-		&app.JobURL,
-		&app.Location,
-		&app.WorkMode,
-		&app.Status,
-		&app.CVVersion,
-		&app.Notes,
-		&app.AppliedDate,
-		&app.CreatedAt,
-		&app.UpdatedAt,
-	)
+	`, id))
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -114,20 +115,13 @@ func (r *ApplicationRepository) GetByID(ctx context.Context, id int64) (*models.
 		return nil, err
 	}
 
-	return &app, nil
+	return app, nil
 }
 
 func (r *ApplicationRepository) Create(ctx context.Context, req models.CreateApplicationRequest) (*models.Application, error) {
-	if req.Source == "" {
-		req.Source = "LinkedIn"
-	}
-	if req.Status == "" {
-		req.Status = "Saved"
-	}
+	setApplicationDefaults(&req.Source, &req.Status, &req.Priority)
 
-	var app models.Application
-
-	err := r.DB.QueryRow(ctx, `
+	app, err := scanApplication(r.DB.QueryRow(ctx, `
 		INSERT INTO applications (
 			job_title,
 			company_name,
@@ -137,25 +131,23 @@ func (r *ApplicationRepository) Create(ctx context.Context, req models.CreateApp
 			work_mode,
 			status,
 			cv_version,
+			salary_range,
+			follow_up_date,
+			recruiter_name,
+			recruiter_email,
+			job_description,
+			priority,
 			notes,
 			applied_date
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NULLIF($10, '')::date)
-		RETURNING
-			id,
-			job_title,
-			company_name,
-			source,
-			job_url,
-			location,
-			work_mode,
-			status,
-			cv_version,
-			notes,
-			COALESCE(TO_CHAR(applied_date, 'YYYY-MM-DD'), '') AS applied_date,
-			created_at,
-			updated_at
-	`,
+		VALUES (
+			$1, $2, $3, $4,
+			$5, $6, $7, $8,
+			$9, NULLIF($10, '')::date,
+			$11, $12, $13, $14,
+			$15, NULLIF($16, '')::date
+		)
+		RETURNING `+applicationSelectColumns,
 		req.JobTitle,
 		req.CompanyName,
 		req.Source,
@@ -164,42 +156,27 @@ func (r *ApplicationRepository) Create(ctx context.Context, req models.CreateApp
 		req.WorkMode,
 		req.Status,
 		req.CVVersion,
+		req.SalaryRange,
+		req.FollowUpDate,
+		req.RecruiterName,
+		req.RecruiterEmail,
+		req.JobDescription,
+		req.Priority,
 		req.Notes,
 		req.AppliedDate,
-	).Scan(
-		&app.ID,
-		&app.JobTitle,
-		&app.CompanyName,
-		&app.Source,
-		&app.JobURL,
-		&app.Location,
-		&app.WorkMode,
-		&app.Status,
-		&app.CVVersion,
-		&app.Notes,
-		&app.AppliedDate,
-		&app.CreatedAt,
-		&app.UpdatedAt,
-	)
+	))
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &app, nil
+	return app, nil
 }
 
 func (r *ApplicationRepository) Update(ctx context.Context, id int64, req models.UpdateApplicationRequest) (*models.Application, error) {
-	if req.Source == "" {
-		req.Source = "LinkedIn"
-	}
-	if req.Status == "" {
-		req.Status = "Saved"
-	}
+	setApplicationDefaults(&req.Source, &req.Status, &req.Priority)
 
-	var app models.Application
-
-	err := r.DB.QueryRow(ctx, `
+	app, err := scanApplication(r.DB.QueryRow(ctx, `
 		UPDATE applications
 		SET
 			job_title = $1,
@@ -210,25 +187,17 @@ func (r *ApplicationRepository) Update(ctx context.Context, id int64, req models
 			work_mode = $6,
 			status = $7,
 			cv_version = $8,
-			notes = $9,
-			applied_date = NULLIF($10, '')::date,
+			salary_range = $9,
+			follow_up_date = NULLIF($10, '')::date,
+			recruiter_name = $11,
+			recruiter_email = $12,
+			job_description = $13,
+			priority = $14,
+			notes = $15,
+			applied_date = NULLIF($16, '')::date,
 			updated_at = NOW()
-		WHERE id = $11
-		RETURNING
-			id,
-			job_title,
-			company_name,
-			source,
-			job_url,
-			location,
-			work_mode,
-			status,
-			cv_version,
-			notes,
-			COALESCE(TO_CHAR(applied_date, 'YYYY-MM-DD'), '') AS applied_date,
-			created_at,
-			updated_at
-	`,
+		WHERE id = $17
+		RETURNING `+applicationSelectColumns,
 		req.JobTitle,
 		req.CompanyName,
 		req.Source,
@@ -237,24 +206,16 @@ func (r *ApplicationRepository) Update(ctx context.Context, id int64, req models
 		req.WorkMode,
 		req.Status,
 		req.CVVersion,
+		req.SalaryRange,
+		req.FollowUpDate,
+		req.RecruiterName,
+		req.RecruiterEmail,
+		req.JobDescription,
+		req.Priority,
 		req.Notes,
 		req.AppliedDate,
 		id,
-	).Scan(
-		&app.ID,
-		&app.JobTitle,
-		&app.CompanyName,
-		&app.Source,
-		&app.JobURL,
-		&app.Location,
-		&app.WorkMode,
-		&app.Status,
-		&app.CVVersion,
-		&app.Notes,
-		&app.AppliedDate,
-		&app.CreatedAt,
-		&app.UpdatedAt,
-	)
+	))
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -264,7 +225,7 @@ func (r *ApplicationRepository) Update(ctx context.Context, id int64, req models
 		return nil, err
 	}
 
-	return &app, nil
+	return app, nil
 }
 
 func (r *ApplicationRepository) Delete(ctx context.Context, id int64) (bool, error) {
@@ -274,4 +235,18 @@ func (r *ApplicationRepository) Delete(ctx context.Context, id int64) (bool, err
 	}
 
 	return result.RowsAffected() > 0, nil
+}
+
+func setApplicationDefaults(source *string, status *string, priority *string) {
+	if *source == "" {
+		*source = "LinkedIn"
+	}
+
+	if *status == "" {
+		*status = "Saved"
+	}
+
+	if *priority == "" {
+		*priority = "Medium"
+	}
 }

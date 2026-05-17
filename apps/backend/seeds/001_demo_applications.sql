@@ -9,6 +9,12 @@ INSERT INTO applications (
     work_mode,
     status,
     cv_version,
+    salary_range,
+    follow_up_date,
+    recruiter_name,
+    recruiter_email,
+    job_description,
+    priority,
     notes,
     applied_date
 )
@@ -22,6 +28,12 @@ VALUES
     'Hybrid',
     'Applied',
     'cv_kubernetes_v1',
+    '€60k-€75k',
+    '2026-05-24',
+    'Demo Recruiter',
+    'recruiter@example.com',
+    'Demo job description focused on Kubernetes, Docker, Terraform, Ansible, CI/CD, and Linux operations.',
+    'High',
     'Demo application created for local development.',
     '2026-05-17'
 ),
@@ -34,6 +46,12 @@ VALUES
     'Remote',
     'Saved',
     'cv_cloud_terraform_v1',
+    'Not listed',
+    NULL,
+    '',
+    '',
+    'Demo cloud role focused on AWS, Terraform, monitoring, and automation.',
+    'Medium',
     'Demo saved application for testing dashboard data.',
     '2026-05-17'
 ),
@@ -46,6 +64,12 @@ VALUES
     'On-site',
     'Interview Scheduled',
     'cv_platform_engineering_v1',
+    '€70k-€85k',
+    '2026-05-20',
+    'Platform Hiring Team',
+    'hiring@example.com',
+    'Demo platform engineering role focused on Kubernetes, Helm, observability, and developer platforms.',
+    'High',
     'Demo interview-stage application.',
     '2026-05-17'
 );
