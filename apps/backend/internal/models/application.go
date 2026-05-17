@@ -61,3 +61,11 @@ type UpdateApplicationRequest struct {
 	Notes          string `json:"notes"`
 	AppliedDate    string `json:"applied_date"`
 }
+
+type ApplicationFilters struct {
+	Search   string
+	Status   string
+	Priority string
+	Source   string
+	WorkMode string
+}

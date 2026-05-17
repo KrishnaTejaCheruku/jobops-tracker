@@ -75,12 +75,40 @@ const applicationSelectColumns = `
 	updated_at
 `
 
-func (r *ApplicationRepository) List(ctx context.Context) ([]models.Application, error) {
+func (r *ApplicationRepository) List(ctx context.Context, filters models.ApplicationFilters) ([]models.Application, error) {
 	rows, err := r.DB.Query(ctx, `
 		SELECT `+applicationSelectColumns+`
 		FROM applications
+		WHERE
+			(
+				$1 = ''
+				OR job_title ILIKE '%' || $1 || '%'
+				OR company_name ILIKE '%' || $1 || '%'
+				OR source ILIKE '%' || $1 || '%'
+				OR job_url ILIKE '%' || $1 || '%'
+				OR location ILIKE '%' || $1 || '%'
+				OR work_mode ILIKE '%' || $1 || '%'
+				OR status ILIKE '%' || $1 || '%'
+				OR cv_version ILIKE '%' || $1 || '%'
+				OR salary_range ILIKE '%' || $1 || '%'
+				OR recruiter_name ILIKE '%' || $1 || '%'
+				OR recruiter_email ILIKE '%' || $1 || '%'
+				OR job_description ILIKE '%' || $1 || '%'
+				OR priority ILIKE '%' || $1 || '%'
+				OR notes ILIKE '%' || $1 || '%'
+			)
+			AND ($2 = '' OR status = $2)
+			AND ($3 = '' OR priority = $3)
+			AND ($4 = '' OR source = $4)
+			AND ($5 = '' OR work_mode = $5)
 		ORDER BY created_at DESC
-	`)
+	`,
+		filters.Search,
+		filters.Status,
+		filters.Priority,
+		filters.Source,
+		filters.WorkMode,
+	)
 	if err != nil {
 		return nil, err
 	}

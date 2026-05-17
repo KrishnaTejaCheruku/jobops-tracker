@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/KrishnaTejaCheruku/jobops-tracker/apps/backend/internal/models"
 	"github.com/KrishnaTejaCheruku/jobops-tracker/apps/backend/internal/repository"
@@ -19,7 +20,20 @@ func NewApplicationHandler(repo *repository.ApplicationRepository) *ApplicationH
 }
 
 func (h *ApplicationHandler) ListApplications(c *gin.Context) {
-	applications, err := h.Repo.List(c.Request.Context())
+	filters := models.ApplicationFilters{
+		Search:   strings.TrimSpace(c.Query("search")),
+		Status:   strings.TrimSpace(c.Query("status")),
+		Priority: strings.TrimSpace(c.Query("priority")),
+		Source:   strings.TrimSpace(c.Query("source")),
+		WorkMode: strings.TrimSpace(c.Query("work_mode")),
+	}
+
+	if err := validation.ValidateApplicationFilters(filters); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	applications, err := h.Repo.List(c.Request.Context(), filters)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

@@ -60,6 +60,16 @@ func ValidateUpdateApplication(req models.UpdateApplicationRequest) error {
 	)
 }
 
+func ValidateApplicationFilters(filters models.ApplicationFilters) error {
+	return validateApplicationFields(
+		filters.Status,
+		filters.Priority,
+		filters.Source,
+		filters.WorkMode,
+		"",
+	)
+}
+
 func validateApplicationFields(status, priority, source, workMode, recruiterEmail string) error {
 	if status != "" && !allowedStatuses[status] {
 		return fmt.Errorf("invalid status: %s", status)
