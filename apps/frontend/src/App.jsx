@@ -21,12 +21,36 @@ const emptyForm = {
   applied_date: "",
 };
 
+function normalizeApplicationForForm(application) {
+  return {
+    job_title: application.job_title || "",
+    company_name: application.company_name || "",
+    source: application.source || "LinkedIn",
+    job_url: application.job_url || "",
+    location: application.location || "",
+    work_mode: application.work_mode || "Hybrid",
+    status: application.status || "Saved",
+    cv_version: application.cv_version || "",
+    salary_range: application.salary_range || "",
+    follow_up_date: application.follow_up_date || "",
+    recruiter_name: application.recruiter_name || "",
+    recruiter_email: application.recruiter_email || "",
+    job_description: application.job_description || "",
+    priority: application.priority || "Medium",
+    notes: application.notes || "",
+    applied_date: application.applied_date || "",
+  };
+}
+
 function App() {
   const [form, setForm] = useState(emptyForm);
   const [applications, setApplications] = useState([]);
+  const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+
+  const isEditing = editingId !== null;
 
   const summary = useMemo(() => {
     return {
@@ -67,15 +91,40 @@ function App() {
     }));
   }
 
+  function startEdit(application) {
+    setEditingId(application.id);
+    setForm(normalizeApplicationForForm(application));
+    setMessage("");
+    setError("");
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setForm(emptyForm);
+    setMessage("");
+    setError("");
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
     setLoading(true);
     setMessage("");
     setError("");
 
+    const url = isEditing
+      ? `${API_BASE_URL}/applications/${editingId}`
+      : `${API_BASE_URL}/applications`;
+
+    const method = isEditing ? "PUT" : "POST";
+
     try {
-      const response = await fetch(`${API_BASE_URL}/applications`, {
-        method: "POST",
+      const response = await fetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json",
         },
@@ -84,11 +133,12 @@ function App() {
 
       if (!response.ok) {
         const errorBody = await response.json();
-        throw new Error(errorBody.error || "Failed to create application");
+        throw new Error(errorBody.error || "Failed to save application");
       }
 
       setForm(emptyForm);
-      setMessage("Application saved successfully.");
+      setEditingId(null);
+      setMessage(isEditing ? "Application updated successfully." : "Application saved successfully.");
       await fetchApplications();
     } catch (err) {
       setError(err.message);
@@ -111,6 +161,10 @@ function App() {
 
       if (!response.ok) {
         throw new Error("Failed to delete application");
+      }
+
+      if (editingId === id) {
+        cancelEdit();
       }
 
       setMessage("Application deleted.");
@@ -147,7 +201,18 @@ function App() {
 
       <section className="layout">
         <form className="card form" onSubmit={handleSubmit}>
-          <h2>Add Application</h2>
+          <div className="form-header">
+            <div>
+              <h2>{isEditing ? "Edit Application" : "Add Application"}</h2>
+              {isEditing && <p>Editing application ID #{editingId}</p>}
+            </div>
+
+            {isEditing && (
+              <button type="button" className="secondary" onClick={cancelEdit}>
+                Cancel
+              </button>
+            )}
+          </div>
 
           <div className="form-grid">
             <label>
@@ -319,7 +384,11 @@ function App() {
           </label>
 
           <button type="submit" disabled={loading}>
-            {loading ? "Saving..." : "Save Application"}
+            {loading
+              ? "Saving..."
+              : isEditing
+                ? "Update Application"
+                : "Save Application"}
           </button>
         </form>
 
@@ -379,13 +448,22 @@ function App() {
                       )}
                     </td>
                     <td>
-                      <button
-                        type="button"
-                        className="danger"
-                        onClick={() => deleteApplication(application.id)}
-                      >
-                        Delete
-                      </button>
+                      <div className="actions">
+                        <button
+                          type="button"
+                          className="secondary small"
+                          onClick={() => startEdit(application)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          className="danger small"
+                          onClick={() => deleteApplication(application.id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

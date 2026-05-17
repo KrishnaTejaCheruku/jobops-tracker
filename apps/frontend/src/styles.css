@@ -280,3 +280,32 @@ td small {
     font-size: 36px;
   }
 }
+
+.form-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.form-header h2 {
+  margin-bottom: 4px;
+}
+
+.form-header p {
+  margin: 0;
+  color: #667085;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+button.small {
+  padding: 7px 10px;
+  font-size: 12px;
+}
