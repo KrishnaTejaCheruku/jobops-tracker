@@ -309,3 +309,43 @@ button.small {
   padding: 7px 10px;
   font-size: 12px;
 }
+
+.filters {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr auto;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 18px;
+  padding: 16px;
+  border-radius: 16px;
+  background: #f8fafc;
+  border: 1px solid #eaecf0;
+}
+
+.clear-filters {
+  white-space: nowrap;
+  height: 44px;
+}
+
+.muted {
+  margin: 4px 0 0;
+  color: #667085;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+@media (max-width: 1200px) {
+  .filters {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .clear-filters {
+    width: 100%;
+  }
+}
+
+@media (max-width: 700px) {
+  .filters {
+    grid-template-columns: 1fr;
+  }
+}

@@ -2,6 +2,28 @@ import React, { useEffect, useMemo, useState } from "react";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
+const statusOptions = [
+  "Saved",
+  "Applied",
+  "Recruiter Contacted",
+  "Interview Scheduled",
+  "Technical Interview",
+  "Offer",
+  "Rejected",
+  "Ghosted",
+  "Withdrawn",
+];
+
+const priorityOptions = ["Low", "Medium", "High"];
+
+const sourceOptions = [
+  "LinkedIn",
+  "Company Website",
+  "Recruiter",
+  "Referral",
+  "Other",
+];
+
 const emptyForm = {
   job_title: "",
   company_name: "",
@@ -19,6 +41,13 @@ const emptyForm = {
   priority: "Medium",
   notes: "",
   applied_date: "",
+};
+
+const emptyFilters = {
+  search: "",
+  status: "All",
+  priority: "All",
+  source: "All",
 };
 
 function normalizeApplicationForForm(application) {
@@ -44,6 +73,7 @@ function normalizeApplicationForForm(application) {
 
 function App() {
   const [form, setForm] = useState(emptyForm);
+  const [filters, setFilters] = useState(emptyFilters);
   const [applications, setApplications] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -62,6 +92,39 @@ function App() {
       highPriority: applications.filter((app) => app.priority === "High").length,
     };
   }, [applications]);
+
+  const filteredApplications = useMemo(() => {
+    const searchTerm = filters.search.trim().toLowerCase();
+
+    return applications.filter((application) => {
+      const searchableText = [
+        application.job_title,
+        application.company_name,
+        application.location,
+        application.work_mode,
+        application.status,
+        application.priority,
+        application.source,
+        application.cv_version,
+        application.salary_range,
+        application.recruiter_name,
+        application.recruiter_email,
+        application.job_description,
+        application.notes,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      const matchesSearch = searchTerm === "" || searchableText.includes(searchTerm);
+      const matchesStatus = filters.status === "All" || application.status === filters.status;
+      const matchesPriority =
+        filters.priority === "All" || application.priority === filters.priority;
+      const matchesSource = filters.source === "All" || application.source === filters.source;
+
+      return matchesSearch && matchesStatus && matchesPriority && matchesSource;
+    });
+  }, [applications, filters]);
 
   async function fetchApplications() {
     try {
@@ -89,6 +152,19 @@ function App() {
       ...current,
       [name]: value,
     }));
+  }
+
+  function handleFilterChange(event) {
+    const { name, value } = event.target;
+
+    setFilters((current) => ({
+      ...current,
+      [name]: value,
+    }));
+  }
+
+  function clearFilters() {
+    setFilters(emptyFilters);
   }
 
   function startEdit(application) {
@@ -240,11 +316,9 @@ function App() {
             <label>
               Source
               <select name="source" value={form.source} onChange={handleChange}>
-                <option>LinkedIn</option>
-                <option>Company Website</option>
-                <option>Recruiter</option>
-                <option>Referral</option>
-                <option>Other</option>
+                {sourceOptions.map((source) => (
+                  <option key={source}>{source}</option>
+                ))}
               </select>
             </label>
 
@@ -280,24 +354,18 @@ function App() {
             <label>
               Status
               <select name="status" value={form.status} onChange={handleChange}>
-                <option>Saved</option>
-                <option>Applied</option>
-                <option>Recruiter Contacted</option>
-                <option>Interview Scheduled</option>
-                <option>Technical Interview</option>
-                <option>Offer</option>
-                <option>Rejected</option>
-                <option>Ghosted</option>
-                <option>Withdrawn</option>
+                {statusOptions.map((status) => (
+                  <option key={status}>{status}</option>
+                ))}
               </select>
             </label>
 
             <label>
               Priority
               <select name="priority" value={form.priority} onChange={handleChange}>
-                <option>Low</option>
-                <option>Medium</option>
-                <option>High</option>
+                {priorityOptions.map((priority) => (
+                  <option key={priority}>{priority}</option>
+                ))}
               </select>
             </label>
 
@@ -394,9 +462,64 @@ function App() {
 
         <section className="card">
           <div className="section-header">
-            <h2>Applications</h2>
+            <div>
+              <h2>Applications</h2>
+              <p className="muted">
+                Showing {filteredApplications.length} of {applications.length}
+              </p>
+            </div>
             <button type="button" className="secondary" onClick={fetchApplications}>
               Refresh
+            </button>
+          </div>
+
+          <div className="filters">
+            <label>
+              Search
+              <input
+                name="search"
+                value={filters.search}
+                onChange={handleFilterChange}
+                placeholder="Search job, company, recruiter, CV, keywords..."
+              />
+            </label>
+
+            <label>
+              Status
+              <select name="status" value={filters.status} onChange={handleFilterChange}>
+                <option>All</option>
+                {statusOptions.map((status) => (
+                  <option key={status}>{status}</option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              Priority
+              <select
+                name="priority"
+                value={filters.priority}
+                onChange={handleFilterChange}
+              >
+                <option>All</option>
+                {priorityOptions.map((priority) => (
+                  <option key={priority}>{priority}</option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              Source
+              <select name="source" value={filters.source} onChange={handleFilterChange}>
+                <option>All</option>
+                {sourceOptions.map((source) => (
+                  <option key={source}>{source}</option>
+                ))}
+              </select>
+            </label>
+
+            <button type="button" className="secondary clear-filters" onClick={clearFilters}>
+              Clear Filters
             </button>
           </div>
 
@@ -415,7 +538,7 @@ function App() {
                 </tr>
               </thead>
               <tbody>
-                {applications.map((application) => (
+                {filteredApplications.map((application) => (
                   <tr key={application.id}>
                     <td>
                       {application.job_url ? (
@@ -472,6 +595,14 @@ function App() {
                   <tr>
                     <td colSpan="8" className="empty">
                       No applications yet. Add your first one.
+                    </td>
+                  </tr>
+                )}
+
+                {applications.length > 0 && filteredApplications.length === 0 && (
+                  <tr>
+                    <td colSpan="8" className="empty">
+                      No applications match the current filters.
                     </td>
                   </tr>
                 )}
