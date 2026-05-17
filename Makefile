@@ -1,4 +1,4 @@
-.PHONY: help dev-up dev-down logs clean migrate db-shell
+.PHONY: help dev-up dev-down logs clean migrate seed db-shell
 
 help:
 	@echo "JobOps Tracker commands:"
@@ -6,6 +6,7 @@ help:
 	@echo "  make dev-down        Stop local development stack"
 	@echo "  make logs            Show Docker Compose logs"
 	@echo "  make migrate         Apply database migrations"
+	@echo "  make seed            Reset and insert demo job application data"
 	@echo "  make db-shell        Open PostgreSQL shell"
 	@echo "  make clean           Remove local containers and volumes"
 
@@ -25,6 +26,11 @@ migrate:
 		docker exec -i jobops-postgres psql -v ON_ERROR_STOP=1 -U jobops -d jobops < $$file; \
 	done
 	@echo "Migrations applied successfully."
+
+seed:
+	@echo "Resetting and seeding demo data..."
+	docker exec -i jobops-postgres psql -v ON_ERROR_STOP=1 -U jobops -d jobops < apps/backend/seeds/001_demo_applications.sql
+	@echo "Demo data seeded successfully."
 
 db-shell:
 	docker exec -it jobops-postgres psql -U jobops -d jobops
