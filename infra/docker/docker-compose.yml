@@ -36,6 +36,20 @@ services:
     networks:
       - jobops-net
 
+  frontend:
+    build:
+      context: ../../apps/frontend
+      dockerfile: Dockerfile
+    container_name: jobops-frontend
+    environment:
+      VITE_API_BASE_URL: http://localhost:8000
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    networks:
+      - jobops-net
+
 volumes:
   jobops_postgres_data:
 
