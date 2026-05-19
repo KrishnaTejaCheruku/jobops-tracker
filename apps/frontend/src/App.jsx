@@ -37,6 +37,7 @@ const emptyForm = {
   work_mode: "Hybrid",
   status: "Saved",
   cv_version: "",
+  cv_version_id: 0,
   salary_range: "",
   follow_up_date: "",
   recruiter_name: "",
@@ -55,6 +56,13 @@ const emptyFilters = {
   work_mode: "All",
 };
 
+const emptyCVVersionForm = {
+  name: "",
+  focus_area: "",
+  file_path: "",
+  notes: "",
+};
+
 function normalizeApplicationForForm(application) {
   return {
     job_title: application.job_title || "",
@@ -65,6 +73,7 @@ function normalizeApplicationForForm(application) {
     work_mode: application.work_mode || "Hybrid",
     status: application.status || "Saved",
     cv_version: application.cv_version || "",
+    cv_version_id: application.cv_version_id || 0,
     salary_range: application.salary_range || "",
     follow_up_date: application.follow_up_date || "",
     recruiter_name: application.recruiter_name || "",
@@ -73,6 +82,13 @@ function normalizeApplicationForForm(application) {
     priority: application.priority || "Medium",
     notes: application.notes || "",
     applied_date: application.applied_date || "",
+  };
+}
+
+function buildApplicationPayload(form) {
+  return {
+    ...form,
+    cv_version_id: Number(form.cv_version_id) || 0,
   };
 }
 
@@ -142,6 +158,8 @@ function App() {
   const [form, setForm] = useState(emptyForm);
   const [filters, setFilters] = useState(emptyFilters);
   const [applications, setApplications] = useState([]);
+  const [cvVersions, setCVVersions] = useState([]);
+  const [cvVersionForm, setCVVersionForm] = useState(emptyCVVersionForm);
   const [editingId, setEditingId] = useState(null);
 
   const [historyApplication, setHistoryApplication] = useState(null);
@@ -150,6 +168,7 @@ function App() {
 
   const [loading, setLoading] = useState(false);
   const [listLoading, setListLoading] = useState(false);
+  const [cvVersionLoading, setCVVersionLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
@@ -214,6 +233,27 @@ function App() {
     }
   }
 
+  async function fetchCVVersions() {
+    setCvVersionLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/cv-versions`);
+
+      if (!response.ok) {
+        const errorBody = await response.json();
+        throw new Error(errorBody.error || "Failed to load CV versions");
+      }
+
+      const data = await response.json();
+      setCVVersions(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setCvVersionLoading(false);
+    }
+  }
+
   async function fetchStatusHistory(application) {
     setHistoryApplication(application);
     setStatusHistory([]);
@@ -250,10 +290,36 @@ function App() {
     fetchApplications(filters);
   }, [filters]);
 
+  useEffect(() => {
+    fetchCVVersions();
+  }, []);
+
   function handleChange(event) {
     const { name, value } = event.target;
 
+    if (name === "cv_version_id") {
+      const cvVersionID = Number(value) || 0;
+      const selectedCVVersion = cvVersions.find((cv) => cv.id === cvVersionID);
+
+      setForm((current) => ({
+        ...current,
+        cv_version_id: cvVersionID,
+        cv_version: selectedCVVersion?.name || "",
+      }));
+
+      return;
+    }
+
     setForm((current) => ({
+      ...current,
+      [name]: value,
+    }));
+  }
+
+  function handleCVVersionFormChange(event) {
+    const { name, value } = event.target;
+
+    setCVVersionForm((current) => ({
       ...current,
       [name]: value,
     }));
@@ -309,7 +375,7 @@ function App() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(form),
+        body: JSON.stringify(buildApplicationPayload(form)),
       });
 
       if (!response.ok) {
@@ -325,6 +391,61 @@ function App() {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function createCVVersion(event) {
+    event.preventDefault();
+    setCvVersionLoading(true);
+    setMessage("");
+    setError("");
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/cv-versions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(cvVersionForm),
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.json();
+        throw new Error(errorBody.error || "Failed to create CV version");
+      }
+
+      setCVVersionForm(emptyCVVersionForm);
+      setMessage("CV version created successfully.");
+      await fetchCVVersions();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setCvVersionLoading(false);
+    }
+  }
+
+  async function deleteCVVersion(id) {
+    const confirmed = window.confirm("Delete this CV version?");
+    if (!confirmed) return;
+
+    setMessage("");
+    setError("");
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/cv-versions/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.json();
+        throw new Error(errorBody.error || "Failed to delete CV version");
+      }
+
+      setMessage("CV version deleted.");
+      await fetchCVVersions();
+      await fetchApplications(filters);
+    } catch (err) {
+      setError(err.message);
     }
   }
 
@@ -378,7 +499,7 @@ function App() {
         <SummaryCard label="Overdue Follow-ups" value={followUps.overdue} />
         <SummaryCard label="Due Today" value={followUps.today} />
         <SummaryCard label="Upcoming Follow-ups" value={followUps.upcoming} />
-        <SummaryCard label="Tracked Follow-ups" value={followUps.items.length} />
+        <SummaryCard label="CV Versions" value={cvVersions.length} />
       </section>
 
       {(message || error) && (
@@ -386,6 +507,91 @@ function App() {
           {error || message}
         </section>
       )}
+
+      <section className="cv-card card">
+        <div className="section-header">
+          <div>
+            <h2>CV Versions</h2>
+            <p className="muted">
+              Create reusable CV versions and link them to job applications.
+              {cvVersionLoading ? " Loading..." : ""}
+            </p>
+          </div>
+          <button type="button" className="secondary" onClick={fetchCVVersions}>
+            Refresh CVs
+          </button>
+        </div>
+
+        <form className="cv-version-form" onSubmit={createCVVersion}>
+          <label>
+            CV Name *
+            <input
+              name="name"
+              value={cvVersionForm.name}
+              onChange={handleCVVersionFormChange}
+              placeholder="cv_kubernetes_terraform_v1"
+              required
+            />
+          </label>
+
+          <label>
+            Focus Area
+            <input
+              name="focus_area"
+              value={cvVersionForm.focus_area}
+              onChange={handleCVVersionFormChange}
+              placeholder="Kubernetes / Terraform / AWS"
+            />
+          </label>
+
+          <label>
+            File Path Placeholder
+            <input
+              name="file_path"
+              value={cvVersionForm.file_path}
+              onChange={handleCVVersionFormChange}
+              placeholder="future-s3-path-or-local-reference"
+            />
+          </label>
+
+          <label>
+            Notes
+            <input
+              name="notes"
+              value={cvVersionForm.notes}
+              onChange={handleCVVersionFormChange}
+              placeholder="What this CV version is optimized for"
+            />
+          </label>
+
+          <button type="submit" disabled={cvVersionLoading}>
+            {cvVersionLoading ? "Saving..." : "Add CV"}
+          </button>
+        </form>
+
+        {cvVersions.length === 0 ? (
+          <p className="empty">No CV versions yet.</p>
+        ) : (
+          <div className="cv-version-list">
+            {cvVersions.map((cv) => (
+              <article className="cv-version-item" key={cv.id}>
+                <div>
+                  <strong>{cv.name}</strong>
+                  <p>{cv.focus_area || "No focus area set"}</p>
+                  {cv.notes && <small>{cv.notes}</small>}
+                </div>
+                <button
+                  type="button"
+                  className="danger small"
+                  onClick={() => deleteCVVersion(cv.id)}
+                >
+                  Delete
+                </button>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
 
       <section className="followup-card card">
         <div className="section-header">
@@ -524,22 +730,28 @@ function App() {
             </label>
 
             <label>
+              CV Version
+              <select
+                name="cv_version_id"
+                value={form.cv_version_id}
+                onChange={handleChange}
+              >
+                <option value={0}>No CV selected</option>
+                {cvVersions.map((cv) => (
+                  <option key={cv.id} value={cv.id}>
+                    {cv.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label>
               Salary Range
               <input
                 name="salary_range"
                 value={form.salary_range}
                 onChange={handleChange}
                 placeholder="€60k-€75k / Not listed"
-              />
-            </label>
-
-            <label>
-              CV Version
-              <input
-                name="cv_version"
-                value={form.cv_version}
-                onChange={handleChange}
-                placeholder="cv_kubernetes_v1"
               />
             </label>
 
@@ -584,6 +796,12 @@ function App() {
               />
             </label>
           </div>
+
+          {form.cv_version && (
+            <p className="selected-cv">
+              Selected CV: <strong>{form.cv_version}</strong>
+            </p>
+          )}
 
           <label>
             Job Description
@@ -721,7 +939,10 @@ function App() {
                       ) : (
                         application.job_title
                       )}
-                      <small>{application.work_mode || "-"}</small>
+                      <small>
+                        {application.work_mode || "-"} · CV:{" "}
+                        {application.cv_version || "Not selected"}
+                      </small>
                     </td>
                     <td>{application.company_name}</td>
                     <td>
