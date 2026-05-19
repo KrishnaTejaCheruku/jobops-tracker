@@ -12,6 +12,7 @@ type Application struct {
 	WorkMode       string    `json:"work_mode"`
 	Status         string    `json:"status"`
 	CVVersion      string    `json:"cv_version"`
+	CVVersionID    int64     `json:"cv_version_id"`
 	SalaryRange    string    `json:"salary_range"`
 	FollowUpDate   string    `json:"follow_up_date"`
 	RecruiterName  string    `json:"recruiter_name"`
@@ -33,6 +34,7 @@ type CreateApplicationRequest struct {
 	WorkMode       string `json:"work_mode"`
 	Status         string `json:"status"`
 	CVVersion      string `json:"cv_version"`
+	CVVersionID    int64  `json:"cv_version_id"`
 	SalaryRange    string `json:"salary_range"`
 	FollowUpDate   string `json:"follow_up_date"`
 	RecruiterName  string `json:"recruiter_name"`
@@ -52,6 +54,7 @@ type UpdateApplicationRequest struct {
 	WorkMode       string `json:"work_mode"`
 	Status         string `json:"status"`
 	CVVersion      string `json:"cv_version"`
+	CVVersionID    int64  `json:"cv_version_id"`
 	SalaryRange    string `json:"salary_range"`
 	FollowUpDate   string `json:"follow_up_date"`
 	RecruiterName  string `json:"recruiter_name"`

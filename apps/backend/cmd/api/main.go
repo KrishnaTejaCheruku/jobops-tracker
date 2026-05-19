@@ -55,6 +55,9 @@ func main() {
 	applicationRepo := repository.NewApplicationRepository(db)
 	applicationHandler := handlers.NewApplicationHandler(applicationRepo)
 
+	cvVersionRepo := repository.NewCVVersionRepository(db)
+	cvVersionHandler := handlers.NewCVVersionHandler(cvVersionRepo)
+
 	router.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"message": "Welcome to JobOps Tracker API",
@@ -72,6 +75,12 @@ func main() {
 	router.PUT("/applications/:id", applicationHandler.UpdateApplication)
 	router.DELETE("/applications/:id", applicationHandler.DeleteApplication)
 	router.GET("/applications/:id/status-history", applicationHandler.GetApplicationStatusHistory)
+
+	router.GET("/cv-versions", cvVersionHandler.ListCVVersions)
+	router.POST("/cv-versions", cvVersionHandler.CreateCVVersion)
+	router.GET("/cv-versions/:id", cvVersionHandler.GetCVVersion)
+	router.PUT("/cv-versions/:id", cvVersionHandler.UpdateCVVersion)
+	router.DELETE("/cv-versions/:id", cvVersionHandler.DeleteCVVersion)
 
 	addr := ":" + cfg.ServerPort
 	log.Printf("starting %s API on port %s", cfg.AppName, cfg.ServerPort)
