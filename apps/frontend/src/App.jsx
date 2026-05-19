@@ -26,6 +26,8 @@ const sourceOptions = [
 
 const workModeOptions = ["Remote", "Hybrid", "On-site"];
 
+const closedStatuses = ["Offer", "Rejected", "Withdrawn"];
+
 const emptyForm = {
   job_title: "",
   company_name: "",
@@ -87,6 +89,19 @@ function buildApplicationQuery(filters) {
   return query ? `?${query}` : "";
 }
 
+function getDateOnly(value) {
+  if (!value) return null;
+
+  const date = new Date(`${value}T00:00:00`);
+
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
 function formatDateTime(value) {
   if (!value) return "-";
 
@@ -97,6 +112,30 @@ function formatDateTime(value) {
   }
 
   return date.toLocaleString();
+}
+
+function getToday() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today;
+}
+
+function isActiveApplication(application) {
+  return !closedStatuses.includes(application.status);
+}
+
+function getFollowUpState(application) {
+  if (!application.follow_up_date || !isActiveApplication(application)) {
+    return "none";
+  }
+
+  const followUpDate = getDateOnly(application.follow_up_date);
+  const today = getToday();
+
+  if (!followUpDate) return "none";
+  if (followUpDate < today) return "overdue";
+  if (followUpDate.getTime() === today.getTime()) return "today";
+  return "upcoming";
 }
 
 function App() {
@@ -124,6 +163,32 @@ function App() {
         ["Interview Scheduled", "Technical Interview"].includes(app.status)
       ).length,
       highPriority: applications.filter((app) => app.priority === "High").length,
+    };
+  }, [applications]);
+
+  const followUps = useMemo(() => {
+    const items = applications
+      .filter((application) => {
+        const state = getFollowUpState(application);
+        return state !== "none";
+      })
+      .map((application) => ({
+        ...application,
+        follow_up_state: getFollowUpState(application),
+      }))
+      .sort((a, b) => {
+        const aDate = getDateOnly(a.follow_up_date);
+        const bDate = getDateOnly(b.follow_up_date);
+
+        if (!aDate || !bDate) return 0;
+        return aDate.getTime() - bDate.getTime();
+      });
+
+    return {
+      items,
+      overdue: items.filter((item) => item.follow_up_state === "overdue").length,
+      today: items.filter((item) => item.follow_up_state === "today").length,
+      upcoming: items.filter((item) => item.follow_up_state === "upcoming").length,
     };
   }, [applications]);
 
@@ -309,11 +374,60 @@ function App() {
         <SummaryCard label="High Priority" value={summary.highPriority} />
       </section>
 
+      <section className="summary-grid followup-summary-grid">
+        <SummaryCard label="Overdue Follow-ups" value={followUps.overdue} />
+        <SummaryCard label="Due Today" value={followUps.today} />
+        <SummaryCard label="Upcoming Follow-ups" value={followUps.upcoming} />
+        <SummaryCard label="Tracked Follow-ups" value={followUps.items.length} />
+      </section>
+
       {(message || error) && (
         <section className={`notice ${error ? "notice-error" : "notice-success"}`}>
           {error || message}
         </section>
       )}
+
+      <section className="followup-card card">
+        <div className="section-header">
+          <div>
+            <h2>Follow-ups</h2>
+            <p className="muted">
+              Active applications with follow-up dates, excluding Offer, Rejected, and Withdrawn.
+            </p>
+          </div>
+        </div>
+
+        {followUps.items.length === 0 ? (
+          <p className="empty">No follow-ups due or scheduled.</p>
+        ) : (
+          <div className="followup-list">
+            {followUps.items.map((application) => (
+              <article
+                className={`followup-item followup-${application.follow_up_state}`}
+                key={`followup-${application.id}`}
+              >
+                <div>
+                  <strong>{application.job_title}</strong>
+                  <p>
+                    {application.company_name} · {application.status} ·{" "}
+                    {application.priority || "Medium"}
+                  </p>
+                </div>
+                <div className="followup-meta">
+                  <span>{application.follow_up_date}</span>
+                  <button
+                    type="button"
+                    className="secondary small"
+                    onClick={() => startEdit(application)}
+                  >
+                    Edit
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
 
       <section className="layout">
         <form className="card form" onSubmit={handleSubmit}>
