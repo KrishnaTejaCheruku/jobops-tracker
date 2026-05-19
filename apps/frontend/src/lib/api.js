@@ -86,3 +86,32 @@ export function deleteCVVersion(id) {
 export function getDashboardAnalytics() {
   return request("/dashboard/analytics");
 }
+
+export function getApplicationsExportURL() {
+  return `${API_BASE_URL}/applications/export.csv`;
+}
+
+export async function importApplicationsCSV(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(`${API_BASE_URL}/applications/import.csv`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    let message = "CSV import failed";
+
+    try {
+      const body = await response.json();
+      message = body.error || message;
+    } catch {
+      message = `${response.status} ${response.statusText}`;
+    }
+
+    throw new Error(message);
+  }
+
+  return response.json();
+}

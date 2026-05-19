@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import AnalyticsDashboard from "./components/AnalyticsDashboard";
 import ApplicationForm from "./components/ApplicationForm";
 import ApplicationsTable from "./components/ApplicationsTable";
+import CSVDataPanel from "./components/CSVDataPanel";
 import CVVersionsPanel from "./components/CVVersionsPanel";
 import FiltersBar from "./components/FiltersBar";
 import FollowUpDashboard from "./components/FollowUpDashboard";
@@ -21,7 +22,9 @@ import {
   createCVVersion,
   deleteApplication,
   deleteCVVersion,
+  getApplicationsExportURL,
   getDashboardAnalytics,
+  importApplicationsCSV,
   listApplications,
   listCVVersions,
   listStatusHistory,
@@ -66,6 +69,7 @@ export default function App() {
   const [cvVersions, setCVVersions] = useState([]);
   const [cvVersionForm, setCVVersionForm] = useState(EMPTY_CV_VERSION_FORM);
   const [analytics, setAnalytics] = useState(null);
+  const [csvImportResult, setCSVImportResult] = useState(null);
   const [editingId, setEditingId] = useState(null);
 
   const [historyApplication, setHistoryApplication] = useState(null);
@@ -73,9 +77,10 @@ export default function App() {
 
   const [loading, setLoading] = useState(false);
   const [listLoading, setListLoading] = useState(false);
-  const [cvVersionLoading, setCVVersionLoading] = useState(false);
+  const [cvVersionLoading, setCvVersionLoading] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [csvImportLoading, setCSVImportLoading] = useState(false);
 
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -281,6 +286,30 @@ export default function App() {
     }
   }
 
+  async function importCSV(file) {
+    setCSVImportLoading(true);
+    setCSVImportResult(null);
+    setMessage("");
+    setError("");
+
+    try {
+      const result = await importApplicationsCSV(file);
+      setCSVImportResult(result);
+
+      if (result.failed > 0) {
+        setError(`CSV import completed with ${result.failed} failed row(s).`);
+      } else {
+        setMessage(`CSV import completed. Imported ${result.imported} row(s).`);
+      }
+
+      await refreshDashboardData(filters);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setCSVImportLoading(false);
+    }
+  }
+
   async function removeCVVersion(id) {
     if (!window.confirm("Delete this CV version?")) return;
 
@@ -371,6 +400,13 @@ export default function App() {
         analytics={analytics}
         loading={analyticsLoading}
         onRefresh={refreshAnalytics}
+      />
+
+      <CSVDataPanel
+        exportUrl={getApplicationsExportURL()}
+        loading={csvImportLoading}
+        importResult={csvImportResult}
+        onImport={importCSV}
       />
 
       <CVVersionsPanel

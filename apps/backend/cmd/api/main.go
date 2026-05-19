@@ -74,6 +74,8 @@ func main() {
 
 	router.GET("/applications", applicationHandler.ListApplications)
 	router.POST("/applications", applicationHandler.CreateApplication)
+	router.GET("/applications/export.csv", applicationHandler.ExportApplicationsCSV)
+	router.POST("/applications/import.csv", applicationHandler.ImportApplicationsCSV)
 	router.GET("/applications/:id", applicationHandler.GetApplication)
 	router.PUT("/applications/:id", applicationHandler.UpdateApplication)
 	router.DELETE("/applications/:id", applicationHandler.DeleteApplication)
