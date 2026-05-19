@@ -1,0 +1,88 @@
+import { API_BASE_URL } from "./constants";
+
+async function request(path, options = {}) {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+    ...options,
+  });
+
+  if (!response.ok) {
+    let message = "Request failed";
+
+    try {
+      const body = await response.json();
+      message = body.error || message;
+    } catch {
+      message = `${response.status} ${response.statusText}`;
+    }
+
+    throw new Error(message);
+  }
+
+  return response.json();
+}
+
+export function buildApplicationQuery(filters) {
+  const params = new URLSearchParams();
+
+  if (filters.search.trim() !== "") params.set("search", filters.search.trim());
+  if (filters.status !== "All") params.set("status", filters.status);
+  if (filters.priority !== "All") params.set("priority", filters.priority);
+  if (filters.source !== "All") params.set("source", filters.source);
+  if (filters.work_mode !== "All") params.set("work_mode", filters.work_mode);
+
+  const query = params.toString();
+  return query ? `?${query}` : "";
+}
+
+export function listApplications(filters) {
+  return request(`/applications${buildApplicationQuery(filters)}`);
+}
+
+export function createApplication(payload) {
+  return request("/applications", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateApplication(id, payload) {
+  return request(`/applications/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteApplication(id) {
+  return request(`/applications/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export function listStatusHistory(applicationId) {
+  return request(`/applications/${applicationId}/status-history`);
+}
+
+export function listCVVersions() {
+  return request("/cv-versions");
+}
+
+export function createCVVersion(payload) {
+  return request("/cv-versions", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteCVVersion(id) {
+  return request(`/cv-versions/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export function getDashboardAnalytics() {
+  return request("/dashboard/analytics");
+}
