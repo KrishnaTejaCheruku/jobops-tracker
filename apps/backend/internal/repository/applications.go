@@ -149,7 +149,15 @@ func (r *ApplicationRepository) GetByID(ctx context.Context, id int64) (*models.
 func (r *ApplicationRepository) Create(ctx context.Context, req models.CreateApplicationRequest) (*models.Application, error) {
 	setApplicationDefaults(&req.Source, &req.Status, &req.Priority)
 
-	app, err := scanApplication(r.DB.QueryRow(ctx, `
+	tx, err := r.DB.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+
+	app, err := scanApplication(tx.QueryRow(ctx, `
 		INSERT INTO applications (
 			job_title,
 			company_name,
@@ -193,8 +201,23 @@ func (r *ApplicationRepository) Create(ctx context.Context, req models.CreateApp
 		req.Notes,
 		req.AppliedDate,
 	))
-
 	if err != nil {
+		return nil, err
+	}
+
+	if _, err := tx.Exec(ctx, `
+		INSERT INTO application_status_history (
+			application_id,
+			old_status,
+			new_status,
+			note
+		)
+		VALUES ($1, $2, $3, $4)
+	`, app.ID, "", app.Status, "Application created"); err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
 		return nil, err
 	}
 
@@ -204,7 +227,28 @@ func (r *ApplicationRepository) Create(ctx context.Context, req models.CreateApp
 func (r *ApplicationRepository) Update(ctx context.Context, id int64, req models.UpdateApplicationRequest) (*models.Application, error) {
 	setApplicationDefaults(&req.Source, &req.Status, &req.Priority)
 
-	app, err := scanApplication(r.DB.QueryRow(ctx, `
+	tx, err := r.DB.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+
+	var currentStatus string
+	if err := tx.QueryRow(ctx, `
+		SELECT status
+		FROM applications
+		WHERE id = $1
+	`, id).Scan(&currentStatus); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+
+		return nil, err
+	}
+
+	app, err := scanApplication(tx.QueryRow(ctx, `
 		UPDATE applications
 		SET
 			job_title = $1,
@@ -244,12 +288,25 @@ func (r *ApplicationRepository) Update(ctx context.Context, id int64, req models
 		req.AppliedDate,
 		id,
 	))
-
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
+	if err != nil {
+		return nil, err
 	}
 
-	if err != nil {
+	if currentStatus != app.Status {
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO application_status_history (
+				application_id,
+				old_status,
+				new_status,
+				note
+			)
+			VALUES ($1, $2, $3, $4)
+		`, app.ID, currentStatus, app.Status, "Status updated"); err != nil {
+			return nil, err
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
 		return nil, err
 	}
 
@@ -263,6 +320,46 @@ func (r *ApplicationRepository) Delete(ctx context.Context, id int64) (bool, err
 	}
 
 	return result.RowsAffected() > 0, nil
+}
+
+func (r *ApplicationRepository) ListStatusHistory(ctx context.Context, applicationID int64) ([]models.ApplicationStatusHistory, error) {
+	rows, err := r.DB.Query(ctx, `
+		SELECT
+			id,
+			application_id,
+			old_status,
+			new_status,
+			note,
+			changed_at
+		FROM application_status_history
+		WHERE application_id = $1
+		ORDER BY changed_at DESC, id DESC
+	`, applicationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	history := []models.ApplicationStatusHistory{}
+
+	for rows.Next() {
+		var item models.ApplicationStatusHistory
+
+		if err := rows.Scan(
+			&item.ID,
+			&item.ApplicationID,
+			&item.OldStatus,
+			&item.NewStatus,
+			&item.Note,
+			&item.ChangedAt,
+		); err != nil {
+			return nil, err
+		}
+
+		history = append(history, item)
+	}
+
+	return history, rows.Err()
 }
 
 func setApplicationDefaults(source *string, status *string, priority *string) {

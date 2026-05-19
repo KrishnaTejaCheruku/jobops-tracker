@@ -1,4 +1,4 @@
-TRUNCATE TABLE applications RESTART IDENTITY;
+TRUNCATE TABLE application_status_history, applications RESTART IDENTITY CASCADE;
 
 INSERT INTO applications (
     job_title,
@@ -73,3 +73,16 @@ VALUES
     'Demo interview-stage application.',
     '2026-05-17'
 );
+
+INSERT INTO application_status_history (
+    application_id,
+    old_status,
+    new_status,
+    note
+)
+SELECT
+    id,
+    '',
+    status,
+    'Seeded demo application'
+FROM applications;

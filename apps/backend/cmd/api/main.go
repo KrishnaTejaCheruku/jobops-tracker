@@ -71,6 +71,7 @@ func main() {
 	router.GET("/applications/:id", applicationHandler.GetApplication)
 	router.PUT("/applications/:id", applicationHandler.UpdateApplication)
 	router.DELETE("/applications/:id", applicationHandler.DeleteApplication)
+	router.GET("/applications/:id/status-history", applicationHandler.GetApplicationStatusHistory)
 
 	addr := ":" + cfg.ServerPort
 	log.Printf("starting %s API on port %s", cfg.AppName, cfg.ServerPort)
