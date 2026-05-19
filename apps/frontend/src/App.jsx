@@ -77,29 +77,26 @@ function normalizeApplicationForForm(application) {
 function buildApplicationQuery(filters) {
   const params = new URLSearchParams();
 
-  if (filters.search.trim() !== "") {
-    params.set("search", filters.search.trim());
-  }
-
-  if (filters.status !== "All") {
-    params.set("status", filters.status);
-  }
-
-  if (filters.priority !== "All") {
-    params.set("priority", filters.priority);
-  }
-
-  if (filters.source !== "All") {
-    params.set("source", filters.source);
-  }
-
-  if (filters.work_mode !== "All") {
-    params.set("work_mode", filters.work_mode);
-  }
+  if (filters.search.trim() !== "") params.set("search", filters.search.trim());
+  if (filters.status !== "All") params.set("status", filters.status);
+  if (filters.priority !== "All") params.set("priority", filters.priority);
+  if (filters.source !== "All") params.set("source", filters.source);
+  if (filters.work_mode !== "All") params.set("work_mode", filters.work_mode);
 
   const query = params.toString();
-
   return query ? `?${query}` : "";
+}
+
+function formatDateTime(value) {
+  if (!value) return "-";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleString();
 }
 
 function App() {
@@ -107,6 +104,11 @@ function App() {
   const [filters, setFilters] = useState(emptyFilters);
   const [applications, setApplications] = useState([]);
   const [editingId, setEditingId] = useState(null);
+
+  const [historyApplication, setHistoryApplication] = useState(null);
+  const [statusHistory, setStatusHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [listLoading, setListLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -145,6 +147,38 @@ function App() {
     } finally {
       setListLoading(false);
     }
+  }
+
+  async function fetchStatusHistory(application) {
+    setHistoryApplication(application);
+    setStatusHistory([]);
+    setHistoryLoading(true);
+    setMessage("");
+    setError("");
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/applications/${application.id}/status-history`
+      );
+
+      if (!response.ok) {
+        const errorBody = await response.json();
+        throw new Error(errorBody.error || "Failed to load status history");
+      }
+
+      const data = await response.json();
+      setStatusHistory(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }
+
+  function closeHistory() {
+    setHistoryApplication(null);
+    setStatusHistory([]);
+    setHistoryLoading(false);
   }
 
   useEffect(() => {
@@ -246,9 +280,8 @@ function App() {
         throw new Error(errorBody.error || "Failed to delete application");
       }
 
-      if (editingId === id) {
-        cancelEdit();
-      }
+      if (editingId === id) cancelEdit();
+      if (historyApplication?.id === id) closeHistory();
 
       setMessage("Application deleted.");
       await fetchApplications(filters);
@@ -607,6 +640,13 @@ function App() {
                         </button>
                         <button
                           type="button"
+                          className="secondary small"
+                          onClick={() => fetchStatusHistory(application)}
+                        >
+                          History
+                        </button>
+                        <button
+                          type="button"
                           className="danger small"
                           onClick={() => deleteApplication(application.id)}
                         >
@@ -629,6 +669,46 @@ function App() {
           </div>
         </section>
       </section>
+
+      {historyApplication && (
+        <section className="history-overlay" onClick={closeHistory}>
+          <div className="history-panel" onClick={(event) => event.stopPropagation()}>
+            <div className="section-header">
+              <div>
+                <h2>Status History</h2>
+                <p className="muted">
+                  {historyApplication.job_title} — {historyApplication.company_name}
+                </p>
+              </div>
+              <button type="button" className="secondary" onClick={closeHistory}>
+                Close
+              </button>
+            </div>
+
+            {historyLoading && <p className="muted">Loading status history...</p>}
+
+            {!historyLoading && statusHistory.length === 0 && (
+              <p className="empty">No status history found.</p>
+            )}
+
+            {!historyLoading && statusHistory.length > 0 && (
+              <div className="history-list">
+                {statusHistory.map((item) => (
+                  <article className="history-item" key={item.id}>
+                    <div>
+                      <strong>
+                        {item.old_status || "Created"} → {item.new_status}
+                      </strong>
+                      <p>{item.note || "Status changed"}</p>
+                    </div>
+                    <span>{formatDateTime(item.changed_at)}</span>
+                  </article>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      )}
     </main>
   );
 }

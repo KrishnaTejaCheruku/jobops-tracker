@@ -353,3 +353,63 @@ button.small {
 .filters {
   grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto;
 }
+
+.history-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.history-panel {
+  width: min(760px, 100%);
+  max-height: 80vh;
+  overflow: auto;
+  background: white;
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.3);
+}
+
+.history-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px;
+  border: 1px solid #eaecf0;
+  border-radius: 16px;
+  background: #f8fafc;
+}
+
+.history-item strong {
+  color: #172033;
+}
+
+.history-item p {
+  margin: 6px 0 0;
+  color: #667085;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.history-item span {
+  flex-shrink: 0;
+  color: #667085;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+@media (max-width: 700px) {
+  .history-item {
+    flex-direction: column;
+  }
+}
