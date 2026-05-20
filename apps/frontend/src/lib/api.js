@@ -1,5 +1,20 @@
 import { API_BASE_URL } from "./constants";
 
+function buildAPIError(message, details = []) {
+  const error = new Error(message || "Request failed");
+  error.details = details || [];
+  return error;
+}
+
+async function parseErrorResponse(response, fallbackMessage) {
+  try {
+    const body = await response.json();
+    return buildAPIError(body.error || fallbackMessage, body.details || []);
+  } catch {
+    return buildAPIError(`${response.status} ${response.statusText}`, []);
+  }
+}
+
 async function request(path, options = {}) {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     headers: {
@@ -10,16 +25,7 @@ async function request(path, options = {}) {
   });
 
   if (!response.ok) {
-    let message = "Request failed";
-
-    try {
-      const body = await response.json();
-      message = body.error || message;
-    } catch {
-      message = `${response.status} ${response.statusText}`;
-    }
-
-    throw new Error(message);
+    throw await parseErrorResponse(response, "Request failed");
   }
 
   return response.json();
@@ -106,16 +112,7 @@ export async function importApplicationsCSV(file) {
   });
 
   if (!response.ok) {
-    let message = "CSV import failed";
-
-    try {
-      const body = await response.json();
-      message = body.error || message;
-    } catch {
-      message = `${response.status} ${response.statusText}`;
-    }
-
-    throw new Error(message);
+    throw await parseErrorResponse(response, "CSV import failed");
   }
 
   return response.json();

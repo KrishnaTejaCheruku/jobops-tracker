@@ -62,8 +62,19 @@ function buildApplicationPayload(form) {
   };
 }
 
+function detailsToFieldErrors(details = []) {
+  return details.reduce((accumulator, item) => {
+    if (item.field && item.message) {
+      accumulator[item.field] = item.message;
+    }
+
+    return accumulator;
+  }, {});
+}
+
 export default function App() {
   const [form, setForm] = useState(EMPTY_APPLICATION_FORM);
+  const [fieldErrors, setFieldErrors] = useState({});
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [applications, setApplications] = useState([]);
   const [pagination, setPagination] = useState({
@@ -216,6 +227,12 @@ export default function App() {
   function handleApplicationChange(event) {
     const { name, value } = event.target;
 
+    setFieldErrors((current) => {
+      const next = { ...current };
+      delete next[name];
+      return next;
+    });
+
     if (name === "cv_version_id") {
       const cvVersionID = Number(value) || 0;
       const selectedCV = cvVersions.find((cv) => cv.id === cvVersionID);
@@ -306,6 +323,7 @@ export default function App() {
   function startEdit(application) {
     setEditingId(application.id);
     setForm(normalizeApplicationForForm(application));
+    setFieldErrors({});
     setMessage("");
     setError("");
 
@@ -315,6 +333,7 @@ export default function App() {
   function cancelEdit() {
     setEditingId(null);
     setForm(EMPTY_APPLICATION_FORM);
+    setFieldErrors({});
     setMessage("");
     setError("");
   }
@@ -325,6 +344,7 @@ export default function App() {
     setLoading(true);
     setMessage("");
     setError("");
+    setFieldErrors({});
 
     try {
       const payload = buildApplicationPayload(form);
@@ -347,6 +367,10 @@ export default function App() {
       await refreshDashboardData(filters, firstPage, sort);
     } catch (err) {
       setError(err.message);
+
+      if (err.details?.length > 0) {
+        setFieldErrors(detailsToFieldErrors(err.details));
+      }
     } finally {
       setLoading(false);
     }
@@ -522,6 +546,7 @@ export default function App() {
           isEditing={isEditing}
           editingId={editingId}
           loading={loading}
+          fieldErrors={fieldErrors}
           onChange={handleApplicationChange}
           onSubmit={submitApplication}
           onCancel={cancelEdit}

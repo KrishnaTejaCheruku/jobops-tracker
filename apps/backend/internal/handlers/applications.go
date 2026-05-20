@@ -29,7 +29,7 @@ func (h *ApplicationHandler) ListApplications(c *gin.Context) {
 	}
 
 	if err := validation.ValidateApplicationFilters(filters); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		respondValidationError(c, err)
 		return
 	}
 
@@ -76,12 +76,20 @@ func (h *ApplicationHandler) CreateApplication(c *gin.Context) {
 	var req models.CreateApplicationRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid request body",
+			"details": []validation.FieldError{
+				{
+					Field:   "body",
+					Message: err.Error(),
+				},
+			},
+		})
 		return
 	}
 
 	if err := validation.ValidateCreateApplication(req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		respondValidationError(c, err)
 		return
 	}
 
@@ -103,12 +111,20 @@ func (h *ApplicationHandler) UpdateApplication(c *gin.Context) {
 	var req models.UpdateApplicationRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid request body",
+			"details": []validation.FieldError{
+				{
+					Field:   "body",
+					Message: err.Error(),
+				},
+			},
+		})
 		return
 	}
 
 	if err := validation.ValidateUpdateApplication(req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		respondValidationError(c, err)
 		return
 	}
 
@@ -170,6 +186,18 @@ func (h *ApplicationHandler) GetApplicationStatusHistory(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, history)
+}
+
+func respondValidationError(c *gin.Context, err error) {
+	if validationErr, ok := validation.AsValidationError(err); ok {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "validation failed",
+			"details": validationErr.Fields,
+		})
+		return
+	}
+
+	c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 }
 
 func parseID(c *gin.Context) (int64, bool) {

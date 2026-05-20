@@ -869,3 +869,12 @@ td small {
 .table-sort-button.active strong {
   color: var(--blue);
 }
+
+.field-error {
+  display: block;
+  margin-top: 2px;
+  color: #b42318;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.35;
+}

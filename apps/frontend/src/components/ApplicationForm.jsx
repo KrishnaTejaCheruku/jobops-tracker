@@ -6,12 +6,21 @@ import {
   WORK_MODE_OPTIONS,
 } from "../lib/constants";
 
+function FieldError({ field, fieldErrors }) {
+  const message = fieldErrors?.[field];
+
+  if (!message) return null;
+
+  return <span className="field-error">{message}</span>;
+}
+
 export default function ApplicationForm({
   form,
   cvVersions,
   isEditing,
   editingId,
   loading,
+  fieldErrors,
   onChange,
   onSubmit,
   onCancel,
@@ -45,6 +54,7 @@ export default function ApplicationForm({
               placeholder="DevOps Engineer"
               required
             />
+            <FieldError field="job_title" fieldErrors={fieldErrors} />
           </label>
 
           <label>
@@ -56,6 +66,7 @@ export default function ApplicationForm({
               placeholder="Example GmbH"
               required
             />
+            <FieldError field="company_name" fieldErrors={fieldErrors} />
           </label>
 
           <label>
@@ -65,6 +76,7 @@ export default function ApplicationForm({
                 <option key={source}>{source}</option>
               ))}
             </select>
+            <FieldError field="source" fieldErrors={fieldErrors} />
           </label>
 
           <label>
@@ -75,6 +87,7 @@ export default function ApplicationForm({
               onChange={onChange}
               placeholder="https://linkedin.com/jobs/..."
             />
+            <FieldError field="job_url" fieldErrors={fieldErrors} />
           </label>
 
           <label>
@@ -85,6 +98,7 @@ export default function ApplicationForm({
               onChange={onChange}
               placeholder="Germany / Remote / Berlin"
             />
+            <FieldError field="location" fieldErrors={fieldErrors} />
           </label>
 
           <label>
@@ -94,6 +108,7 @@ export default function ApplicationForm({
                 <option key={workMode}>{workMode}</option>
               ))}
             </select>
+            <FieldError field="work_mode" fieldErrors={fieldErrors} />
           </label>
         </div>
       </div>
@@ -109,6 +124,7 @@ export default function ApplicationForm({
                 <option key={status}>{status}</option>
               ))}
             </select>
+            <FieldError field="status" fieldErrors={fieldErrors} />
           </label>
 
           <label>
@@ -118,6 +134,7 @@ export default function ApplicationForm({
                 <option key={priority}>{priority}</option>
               ))}
             </select>
+            <FieldError field="priority" fieldErrors={fieldErrors} />
           </label>
 
           <label>
@@ -134,6 +151,7 @@ export default function ApplicationForm({
                 </option>
               ))}
             </select>
+            <FieldError field="cv_version_id" fieldErrors={fieldErrors} />
           </label>
 
           <label>
@@ -144,6 +162,7 @@ export default function ApplicationForm({
               onChange={onChange}
               placeholder="€60k-€75k / Not listed"
             />
+            <FieldError field="salary_range" fieldErrors={fieldErrors} />
           </label>
 
           <label>
@@ -154,6 +173,7 @@ export default function ApplicationForm({
               value={form.applied_date}
               onChange={onChange}
             />
+            <FieldError field="applied_date" fieldErrors={fieldErrors} />
           </label>
 
           <label>
@@ -164,6 +184,7 @@ export default function ApplicationForm({
               value={form.follow_up_date}
               onChange={onChange}
             />
+            <FieldError field="follow_up_date" fieldErrors={fieldErrors} />
           </label>
         </div>
 
@@ -186,6 +207,7 @@ export default function ApplicationForm({
               onChange={onChange}
               placeholder="Jane Recruiter"
             />
+            <FieldError field="recruiter_name" fieldErrors={fieldErrors} />
           </label>
 
           <label>
@@ -197,6 +219,7 @@ export default function ApplicationForm({
               onChange={onChange}
               placeholder="jane@example.com"
             />
+            <FieldError field="recruiter_email" fieldErrors={fieldErrors} />
           </label>
         </div>
 
@@ -208,6 +231,7 @@ export default function ApplicationForm({
             onChange={onChange}
             placeholder="Paste job description or important keywords..."
           />
+          <FieldError field="job_description" fieldErrors={fieldErrors} />
         </label>
 
         <label>
@@ -218,6 +242,7 @@ export default function ApplicationForm({
             onChange={onChange}
             placeholder="Application notes..."
           />
+          <FieldError field="notes" fieldErrors={fieldErrors} />
         </label>
       </div>
 

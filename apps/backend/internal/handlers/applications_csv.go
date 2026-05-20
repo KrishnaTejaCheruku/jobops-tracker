@@ -127,21 +127,9 @@ func (h *ApplicationHandler) ImportApplicationsCSV(c *gin.Context) {
 
 		applyCSVImportDefaults(&req)
 
-		if strings.TrimSpace(req.JobTitle) == "" {
-			result.Failed++
-			result.Errors = append(result.Errors, fmt.Sprintf("row %d: job_title is required", actualRowNumber))
-			continue
-		}
-
-		if strings.TrimSpace(req.CompanyName) == "" {
-			result.Failed++
-			result.Errors = append(result.Errors, fmt.Sprintf("row %d: company_name is required", actualRowNumber))
-			continue
-		}
-
 		if err := validation.ValidateCreateApplication(req); err != nil {
 			result.Failed++
-			result.Errors = append(result.Errors, fmt.Sprintf("row %d: %s", actualRowNumber, err.Error()))
+			result.Errors = append(result.Errors, fmt.Sprintf("row %d: %s", actualRowNumber, formatValidationErrorForCSV(err)))
 			continue
 		}
 
@@ -326,4 +314,19 @@ func csvRowMatchesExistingApplication(existing models.Application, req models.Cr
 
 func sameCSVText(left string, right string) bool {
 	return strings.TrimSpace(left) == strings.TrimSpace(right)
+}
+
+func formatValidationErrorForCSV(err error) string {
+	validationErr, ok := validation.AsValidationError(err)
+	if !ok {
+		return err.Error()
+	}
+
+	messages := make([]string, 0, len(validationErr.Fields))
+
+	for _, field := range validationErr.Fields {
+		messages = append(messages, fmt.Sprintf("%s: %s", field.Field, field.Message))
+	}
+
+	return strings.Join(messages, "; ")
 }

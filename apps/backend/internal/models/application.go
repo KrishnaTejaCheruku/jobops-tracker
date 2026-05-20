@@ -26,8 +26,8 @@ type Application struct {
 }
 
 type CreateApplicationRequest struct {
-	JobTitle       string `json:"job_title" binding:"required"`
-	CompanyName    string `json:"company_name" binding:"required"`
+	JobTitle       string `json:"job_title"`
+	CompanyName    string `json:"company_name"`
 	Source         string `json:"source"`
 	JobURL         string `json:"job_url"`
 	Location       string `json:"location"`
@@ -46,8 +46,8 @@ type CreateApplicationRequest struct {
 }
 
 type UpdateApplicationRequest struct {
-	JobTitle       string `json:"job_title" binding:"required"`
-	CompanyName    string `json:"company_name" binding:"required"`
+	JobTitle       string `json:"job_title"`
+	CompanyName    string `json:"company_name"`
 	Source         string `json:"source"`
 	JobURL         string `json:"job_url"`
 	Location       string `json:"location"`
