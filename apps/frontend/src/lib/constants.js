@@ -13,6 +13,13 @@ export const STATUS_OPTIONS = [
   "Withdrawn",
 ];
 
+export const CLOSED_STATUSES = [
+  "Offer",
+  "Rejected",
+  "Ghosted",
+  "Withdrawn",
+];
+
 export const PRIORITY_OPTIONS = ["Low", "Medium", "High"];
 
 export const SOURCE_OPTIONS = [
@@ -24,8 +31,6 @@ export const SOURCE_OPTIONS = [
 ];
 
 export const WORK_MODE_OPTIONS = ["Remote", "Hybrid", "On-site"];
-
-export const CLOSED_STATUSES = ["Offer", "Rejected", "Withdrawn"];
 
 export const EMPTY_APPLICATION_FORM = {
   job_title: "",
@@ -47,17 +52,17 @@ export const EMPTY_APPLICATION_FORM = {
   applied_date: "",
 };
 
+export const EMPTY_CV_VERSION_FORM = {
+  name: "",
+  description: "",
+  file_path: "",
+  tags: "",
+};
+
 export const EMPTY_FILTERS = {
   search: "",
   status: "All",
   priority: "All",
   source: "All",
   work_mode: "All",
-};
-
-export const EMPTY_CV_VERSION_FORM = {
-  name: "",
-  focus_area: "",
-  file_path: "",
-  notes: "",
 };

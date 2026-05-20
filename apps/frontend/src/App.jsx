@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 
 import AnalyticsDashboard from "./components/AnalyticsDashboard";
+import ApplicationDetailModal from "./components/ApplicationDetailModal";
 import ApplicationForm from "./components/ApplicationForm";
 import ApplicationsTable from "./components/ApplicationsTable";
 import CSVDataPanel from "./components/CSVDataPanel";
@@ -10,6 +11,7 @@ import FollowUpDashboard from "./components/FollowUpDashboard";
 import Notice from "./components/Notice";
 import StatusHistoryModal from "./components/StatusHistoryModal";
 import SummaryCard from "./components/SummaryCard";
+import ThemeToggle from "./components/ThemeToggle";
 
 import {
   EMPTY_APPLICATION_FORM,
@@ -72,7 +74,22 @@ function detailsToFieldErrors(details = []) {
   }, {});
 }
 
+function getInitialTheme() {
+  const savedTheme = window.localStorage.getItem("jobops-theme");
+
+  if (savedTheme === "dark" || savedTheme === "light") {
+    return savedTheme;
+  }
+
+  if (window.matchMedia?.("(prefers-color-scheme: dark)").matches) {
+    return "dark";
+  }
+
+  return "light";
+}
+
 export default function App() {
+  const [theme, setTheme] = useState(getInitialTheme);
   const [form, setForm] = useState(EMPTY_APPLICATION_FORM);
   const [fieldErrors, setFieldErrors] = useState({});
   const [filters, setFilters] = useState(EMPTY_FILTERS);
@@ -94,6 +111,7 @@ export default function App() {
   const [csvImportResult, setCSVImportResult] = useState(null);
   const [editingId, setEditingId] = useState(null);
 
+  const [detailApplication, setDetailApplication] = useState(null);
   const [historyApplication, setHistoryApplication] = useState(null);
   const [statusHistory, setStatusHistory] = useState([]);
 
@@ -108,6 +126,11 @@ export default function App() {
   const [error, setError] = useState("");
 
   const isEditing = editingId !== null;
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    window.localStorage.setItem("jobops-theme", theme);
+  }, [theme]);
 
   const summary = useMemo(() => {
     return {
@@ -224,6 +247,10 @@ export default function App() {
     refreshAnalytics();
   }, []);
 
+  function toggleTheme() {
+    setTheme((current) => (current === "dark" ? "light" : "dark"));
+  }
+
   function handleApplicationChange(event) {
     const { name, value } = event.target;
 
@@ -320,7 +347,18 @@ export default function App() {
     });
   }
 
+  function openDetail(application) {
+    setDetailApplication(application);
+    setMessage("");
+    setError("");
+  }
+
+  function closeDetail() {
+    setDetailApplication(null);
+  }
+
   function startEdit(application) {
+    setDetailApplication(null);
     setEditingId(application.id);
     setForm(normalizeApplicationForForm(application));
     setFieldErrors({});
@@ -454,6 +492,7 @@ export default function App() {
       await deleteApplication(id);
 
       if (editingId === id) cancelEdit();
+      if (detailApplication?.id === id) closeDetail();
       if (historyApplication?.id === id) closeHistory();
 
       setMessage("Application deleted.");
@@ -464,6 +503,7 @@ export default function App() {
   }
 
   async function openHistory(application) {
+    setDetailApplication(null);
     setHistoryApplication(application);
     setStatusHistory([]);
     setHistoryLoading(true);
@@ -496,6 +536,8 @@ export default function App() {
             Track job applications, CV versions, follow-ups, recruiters, and pipeline status without Excel.
           </p>
         </div>
+
+        <ThemeToggle theme={theme} onToggle={toggleTheme} />
       </section>
 
       <section className="summary-grid">
@@ -574,6 +616,7 @@ export default function App() {
             pagination={pagination}
             sort={sort}
             onRefresh={() => refreshApplications(filters, pagination, sort)}
+            onView={openDetail}
             onEdit={startEdit}
             onDelete={removeApplication}
             onHistory={openHistory}
@@ -583,6 +626,13 @@ export default function App() {
           />
         </div>
       </section>
+
+      <ApplicationDetailModal
+        application={detailApplication}
+        onClose={closeDetail}
+        onEdit={startEdit}
+        onHistory={openHistory}
+      />
 
       <StatusHistoryModal
         application={historyApplication}

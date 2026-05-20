@@ -34,6 +34,7 @@ export default function ApplicationsTable({
   pagination,
   sort,
   onRefresh,
+  onView,
   onEdit,
   onDelete,
   onHistory,
@@ -139,10 +140,19 @@ export default function ApplicationsTable({
                     <button
                       type="button"
                       className="btn btn-soft btn-small"
+                      onClick={() => onView(application)}
+                    >
+                      View
+                    </button>
+
+                    <button
+                      type="button"
+                      className="btn btn-soft btn-small"
                       onClick={() => onEdit(application)}
                     >
                       Edit
                     </button>
+
                     <button
                       type="button"
                       className="btn btn-soft btn-small"
@@ -150,6 +160,7 @@ export default function ApplicationsTable({
                     >
                       History
                     </button>
+
                     <button
                       type="button"
                       className="btn btn-danger btn-small"

@@ -48,3 +48,8 @@ uploads/
 private/
 real-cv/
 real-applications/
+
+# Production/runtime environment files
+.env.production
+.env.production.local
+.env.*.local
