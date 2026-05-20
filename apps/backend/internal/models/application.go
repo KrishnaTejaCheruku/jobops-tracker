@@ -72,3 +72,23 @@ type ApplicationFilters struct {
 	Source   string
 	WorkMode string
 }
+
+type ApplicationPagination struct {
+	Page     int
+	PageSize int
+}
+
+type ApplicationSort struct {
+	SortBy    string
+	SortOrder string
+}
+
+type PaginatedApplicationsResponse struct {
+	Items      []Application `json:"items"`
+	Page       int           `json:"page"`
+	PageSize   int           `json:"page_size"`
+	TotalItems int64         `json:"total_items"`
+	TotalPages int           `json:"total_pages"`
+	SortBy     string        `json:"sort_by"`
+	SortOrder  string        `json:"sort_order"`
+}

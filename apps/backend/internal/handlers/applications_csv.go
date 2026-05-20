@@ -125,6 +125,8 @@ func (h *ApplicationHandler) ImportApplicationsCSV(c *gin.Context) {
 			continue
 		}
 
+		applyCSVImportDefaults(&req)
+
 		if strings.TrimSpace(req.JobTitle) == "" {
 			result.Failed++
 			result.Errors = append(result.Errors, fmt.Sprintf("row %d: job_title is required", actualRowNumber))
@@ -143,13 +145,47 @@ func (h *ApplicationHandler) ImportApplicationsCSV(c *gin.Context) {
 			continue
 		}
 
-		if _, err := h.Repo.Create(c.Request.Context(), req); err != nil {
+		existing, err := h.Repo.FindDuplicateForImport(c.Request.Context(), req)
+		if err != nil {
 			result.Failed++
-			result.Errors = append(result.Errors, fmt.Sprintf("row %d: %s", actualRowNumber, err.Error()))
+			result.Errors = append(result.Errors, fmt.Sprintf("row %d: duplicate lookup failed: %s", actualRowNumber, err.Error()))
 			continue
 		}
 
-		result.Imported++
+		if existing == nil {
+			if _, err := h.Repo.Create(c.Request.Context(), req); err != nil {
+				result.Failed++
+				result.Errors = append(result.Errors, fmt.Sprintf("row %d: %s", actualRowNumber, err.Error()))
+				continue
+			}
+
+			result.Imported++
+			continue
+		}
+
+		if csvRowMatchesExistingApplication(*existing, req) {
+			result.Skipped++
+			continue
+		}
+
+		updatedApplication, err := h.Repo.Update(
+			c.Request.Context(),
+			existing.ID,
+			createRequestToUpdateRequest(req),
+		)
+		if err != nil {
+			result.Failed++
+			result.Errors = append(result.Errors, fmt.Sprintf("row %d: update failed: %s", actualRowNumber, err.Error()))
+			continue
+		}
+
+		if updatedApplication == nil {
+			result.Failed++
+			result.Errors = append(result.Errors, fmt.Sprintf("row %d: duplicate disappeared before update", actualRowNumber))
+			continue
+		}
+
+		result.Updated++
 	}
 
 	c.JSON(http.StatusOK, result)
@@ -230,4 +266,64 @@ func int64ToCSV(value int64) string {
 	}
 
 	return strconv.FormatInt(value, 10)
+}
+
+func applyCSVImportDefaults(req *models.CreateApplicationRequest) {
+	if strings.TrimSpace(req.Source) == "" {
+		req.Source = "LinkedIn"
+	}
+
+	if strings.TrimSpace(req.Status) == "" {
+		req.Status = "Saved"
+	}
+
+	if strings.TrimSpace(req.Priority) == "" {
+		req.Priority = "Medium"
+	}
+}
+
+func createRequestToUpdateRequest(req models.CreateApplicationRequest) models.UpdateApplicationRequest {
+	return models.UpdateApplicationRequest{
+		JobTitle:       req.JobTitle,
+		CompanyName:    req.CompanyName,
+		Source:         req.Source,
+		JobURL:         req.JobURL,
+		Location:       req.Location,
+		WorkMode:       req.WorkMode,
+		Status:         req.Status,
+		CVVersion:      req.CVVersion,
+		CVVersionID:    req.CVVersionID,
+		SalaryRange:    req.SalaryRange,
+		FollowUpDate:   req.FollowUpDate,
+		RecruiterName:  req.RecruiterName,
+		RecruiterEmail: req.RecruiterEmail,
+		JobDescription: req.JobDescription,
+		Priority:       req.Priority,
+		Notes:          req.Notes,
+		AppliedDate:    req.AppliedDate,
+	}
+}
+
+func csvRowMatchesExistingApplication(existing models.Application, req models.CreateApplicationRequest) bool {
+	return sameCSVText(existing.JobTitle, req.JobTitle) &&
+		sameCSVText(existing.CompanyName, req.CompanyName) &&
+		sameCSVText(existing.Source, req.Source) &&
+		sameCSVText(existing.JobURL, req.JobURL) &&
+		sameCSVText(existing.Location, req.Location) &&
+		sameCSVText(existing.WorkMode, req.WorkMode) &&
+		sameCSVText(existing.Status, req.Status) &&
+		sameCSVText(existing.CVVersion, req.CVVersion) &&
+		existing.CVVersionID == req.CVVersionID &&
+		sameCSVText(existing.SalaryRange, req.SalaryRange) &&
+		sameCSVText(existing.FollowUpDate, req.FollowUpDate) &&
+		sameCSVText(existing.RecruiterName, req.RecruiterName) &&
+		sameCSVText(existing.RecruiterEmail, req.RecruiterEmail) &&
+		sameCSVText(existing.JobDescription, req.JobDescription) &&
+		sameCSVText(existing.Priority, req.Priority) &&
+		sameCSVText(existing.Notes, req.Notes) &&
+		sameCSVText(existing.AppliedDate, req.AppliedDate)
+}
+
+func sameCSVText(left string, right string) bool {
+	return strings.TrimSpace(left) == strings.TrimSpace(right)
 }

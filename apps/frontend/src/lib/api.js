@@ -25,7 +25,7 @@ async function request(path, options = {}) {
   return response.json();
 }
 
-export function buildApplicationQuery(filters) {
+export function buildApplicationQuery(filters, pagination = {}, sort = {}) {
   const params = new URLSearchParams();
 
   if (filters.search.trim() !== "") params.set("search", filters.search.trim());
@@ -34,12 +34,17 @@ export function buildApplicationQuery(filters) {
   if (filters.source !== "All") params.set("source", filters.source);
   if (filters.work_mode !== "All") params.set("work_mode", filters.work_mode);
 
+  params.set("page", String(pagination.page || 1));
+  params.set("page_size", String(pagination.pageSize || 10));
+  params.set("sort_by", sort.sortBy || "created_at");
+  params.set("sort_order", sort.sortOrder || "desc");
+
   const query = params.toString();
   return query ? `?${query}` : "";
 }
 
-export function listApplications(filters) {
-  return request(`/applications${buildApplicationQuery(filters)}`);
+export function listApplications(filters, pagination, sort) {
+  return request(`/applications${buildApplicationQuery(filters, pagination, sort)}`);
 }
 
 export function createApplication(payload) {

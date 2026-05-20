@@ -39,7 +39,8 @@ export default function CSVDataPanel({
           <p className="section-kicker">Data portability</p>
           <h2>CSV Import / Export</h2>
           <p className="muted">
-            Export applications for backup or spreadsheet review. Import creates new application records from CSV.
+            Export applications for backup or spreadsheet review. Import creates new rows,
+            updates duplicates, and skips identical records.
           </p>
         </div>
 
@@ -74,7 +75,8 @@ export default function CSVDataPanel({
           <article className="cv-version-item">
             <div>
               <strong>
-                Imported {importResult.imported} row{importResult.imported === 1 ? "" : "s"}
+                Imported {importResult.imported || 0} · Updated{" "}
+                {importResult.updated || 0} · Skipped {importResult.skipped || 0}
                 {importResult.failed > 0 ? ` · Failed ${importResult.failed}` : ""}
               </strong>
 

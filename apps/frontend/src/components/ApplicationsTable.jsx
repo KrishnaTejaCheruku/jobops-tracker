@@ -1,5 +1,15 @@
 import React from "react";
 
+const sortableColumns = [
+  { key: "job_title", label: "Role" },
+  { key: "company_name", label: "Company" },
+  { key: "status", label: "Status" },
+  { key: "priority", label: "Priority" },
+  { key: "salary_range", label: "Salary" },
+  { key: "follow_up_date", label: "Follow-up" },
+  { key: "recruiter_name", label: "Recruiter" },
+];
+
 function priorityClass(priority) {
   return `badge priority priority-${(priority || "Medium").toLowerCase()}`;
 }
@@ -10,14 +20,43 @@ function statusClass(status) {
     .replaceAll(" ", "-")}`;
 }
 
+function sortIndicator(columnKey, sort) {
+  if (sort.sortBy !== columnKey) {
+    return "↕";
+  }
+
+  return sort.sortOrder === "asc" ? "↑" : "↓";
+}
+
 export default function ApplicationsTable({
   applications,
   listLoading,
+  pagination,
+  sort,
   onRefresh,
   onEdit,
   onDelete,
   onHistory,
+  onPageChange,
+  onPageSizeChange,
+  onSortChange,
 }) {
+  const canGoPrevious = pagination.page > 1;
+  const canGoNext = pagination.totalPages > 0 && pagination.page < pagination.totalPages;
+
+  function renderSortableHeader(columnKey, label) {
+    return (
+      <button
+        type="button"
+        className={`table-sort-button ${sort.sortBy === columnKey ? "active" : ""}`}
+        onClick={() => onSortChange(columnKey)}
+      >
+        <span>{label}</span>
+        <strong>{sortIndicator(columnKey, sort)}</strong>
+      </button>
+    );
+  }
+
   return (
     <section className="card applications-card">
       <div className="card-header">
@@ -25,7 +64,8 @@ export default function ApplicationsTable({
           <p className="section-kicker">Pipeline</p>
           <h2>Applications</h2>
           <p className="muted">
-            Showing {applications.length} result{applications.length === 1 ? "" : "s"}
+            Showing {applications.length} of {pagination.totalItems} result
+            {pagination.totalItems === 1 ? "" : "s"}
             {listLoading ? "..." : ""}
           </p>
         </div>
@@ -39,13 +79,11 @@ export default function ApplicationsTable({
         <table>
           <thead>
             <tr>
-              <th>Role</th>
-              <th>Company</th>
-              <th>Status</th>
-              <th>Priority</th>
-              <th>Salary</th>
-              <th>Follow-up</th>
-              <th>Recruiter</th>
+              {sortableColumns.map((column) => (
+                <th key={column.key}>
+                  {renderSortableHeader(column.key, column.label)}
+                </th>
+              ))}
               <th>Actions</th>
             </tr>
           </thead>
@@ -133,6 +171,47 @@ export default function ApplicationsTable({
             )}
           </tbody>
         </table>
+      </div>
+
+      <div className="pagination-bar">
+        <div className="pagination-info">
+          Page <strong>{pagination.page}</strong> of{" "}
+          <strong>{pagination.totalPages || 1}</strong> ·{" "}
+          <strong>{pagination.totalItems}</strong> total · Sorted by{" "}
+          <strong>{sort.sortBy}</strong> <strong>{sort.sortOrder}</strong>
+        </div>
+
+        <div className="pagination-controls">
+          <label>
+            Page size
+            <select
+              value={pagination.pageSize}
+              onChange={(event) => onPageSizeChange(Number(event.target.value))}
+            >
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+            </select>
+          </label>
+
+          <button
+            type="button"
+            className="btn btn-soft btn-small"
+            disabled={!canGoPrevious}
+            onClick={() => onPageChange(pagination.page - 1)}
+          >
+            Previous
+          </button>
+
+          <button
+            type="button"
+            className="btn btn-soft btn-small"
+            disabled={!canGoNext}
+            onClick={() => onPageChange(pagination.page + 1)}
+          >
+            Next
+          </button>
+        </div>
       </div>
     </section>
   );

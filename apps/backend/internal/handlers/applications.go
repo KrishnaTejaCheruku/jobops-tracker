@@ -33,7 +33,17 @@ func (h *ApplicationHandler) ListApplications(c *gin.Context) {
 		return
 	}
 
-	applications, err := h.Repo.List(c.Request.Context(), filters)
+	pagination := models.ApplicationPagination{
+		Page:     parsePositiveInt(c.Query("page"), 1),
+		PageSize: parsePositiveInt(c.Query("page_size"), 10),
+	}
+
+	sort := models.ApplicationSort{
+		SortBy:    strings.TrimSpace(c.Query("sort_by")),
+		SortOrder: strings.TrimSpace(c.Query("sort_order")),
+	}
+
+	applications, err := h.Repo.ListPaginated(c.Request.Context(), filters, pagination, sort)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -170,4 +180,17 @@ func parseID(c *gin.Context) (int64, bool) {
 	}
 
 	return id, true
+}
+
+func parsePositiveInt(value string, fallback int) int {
+	if strings.TrimSpace(value) == "" {
+		return fallback
+	}
+
+	parsed, err := strconv.Atoi(value)
+	if err != nil || parsed < 1 {
+		return fallback
+	}
+
+	return parsed
 }

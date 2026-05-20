@@ -798,3 +798,74 @@ td small {
     padding-right: 16px;
   }
 }
+
+.pagination-bar {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  padding: 18px 24px 22px;
+}
+
+.pagination-info {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.pagination-info strong {
+  color: var(--text);
+}
+
+.pagination-controls {
+  display: flex;
+  gap: 10px;
+  align-items: end;
+}
+
+.pagination-controls label {
+  min-width: 120px;
+}
+
+.pagination-controls select {
+  min-height: 36px;
+  padding: 7px 10px;
+  border-radius: 11px;
+}
+
+@media (max-width: 720px) {
+  .pagination-bar,
+  .pagination-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.table-sort-button {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.table-sort-button strong {
+  color: #98a2b3;
+  font-size: 13px;
+}
+
+.table-sort-button.active {
+  color: var(--blue);
+}
+
+.table-sort-button.active strong {
+  color: var(--blue);
+}

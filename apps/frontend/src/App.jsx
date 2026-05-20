@@ -66,6 +66,17 @@ export default function App() {
   const [form, setForm] = useState(EMPTY_APPLICATION_FORM);
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [applications, setApplications] = useState([]);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pageSize: 10,
+    totalItems: 0,
+    totalPages: 0,
+  });
+  const [sort, setSort] = useState({
+    sortBy: "created_at",
+    sortOrder: "desc",
+  });
+
   const [cvVersions, setCVVersions] = useState([]);
   const [cvVersionForm, setCVVersionForm] = useState(EMPTY_CV_VERSION_FORM);
   const [analytics, setAnalytics] = useState(null);
@@ -121,13 +132,32 @@ export default function App() {
     };
   }, [applications]);
 
-  async function refreshApplications(activeFilters = filters) {
+  async function refreshApplications(
+    activeFilters = filters,
+    activePagination = pagination,
+    activeSort = sort,
+  ) {
     setListLoading(true);
     setError("");
 
     try {
-      const data = await listApplications(activeFilters);
-      setApplications(data);
+      const data = await listApplications(activeFilters, {
+        page: activePagination.page,
+        pageSize: activePagination.pageSize,
+      }, activeSort);
+
+      setApplications(data.items || []);
+      setPagination((current) => ({
+        ...current,
+        page: data.page,
+        pageSize: data.page_size,
+        totalItems: data.total_items,
+        totalPages: data.total_pages,
+      }));
+      setSort({
+        sortBy: data.sort_by || activeSort.sortBy,
+        sortOrder: data.sort_order || activeSort.sortOrder,
+      });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -163,16 +193,20 @@ export default function App() {
     }
   }
 
-  async function refreshDashboardData(activeFilters = filters) {
+  async function refreshDashboardData(
+    activeFilters = filters,
+    activePagination = pagination,
+    activeSort = sort,
+  ) {
     await Promise.all([
-      refreshApplications(activeFilters),
+      refreshApplications(activeFilters, activePagination, activeSort),
       refreshAnalytics(),
     ]);
   }
 
   useEffect(() => {
-    refreshApplications(filters);
-  }, [filters]);
+    refreshApplications(filters, pagination, sort);
+  }, [filters, pagination.page, pagination.pageSize, sort.sortBy, sort.sortOrder]);
 
   useEffect(() => {
     refreshCVVersions();
@@ -213,6 +247,11 @@ export default function App() {
   function handleFilterChange(event) {
     const { name, value } = event.target;
 
+    setPagination((current) => ({
+      ...current,
+      page: 1,
+    }));
+
     setFilters((current) => ({
       ...current,
       [name]: value,
@@ -220,7 +259,48 @@ export default function App() {
   }
 
   function clearFilters() {
+    setPagination((current) => ({
+      ...current,
+      page: 1,
+    }));
+
     setFilters(EMPTY_FILTERS);
+  }
+
+  function changePage(nextPage) {
+    setPagination((current) => ({
+      ...current,
+      page: nextPage,
+    }));
+  }
+
+  function changePageSize(nextPageSize) {
+    setPagination((current) => ({
+      ...current,
+      page: 1,
+      pageSize: nextPageSize,
+    }));
+  }
+
+  function changeSort(columnKey) {
+    setPagination((current) => ({
+      ...current,
+      page: 1,
+    }));
+
+    setSort((current) => {
+      if (current.sortBy === columnKey) {
+        return {
+          sortBy: columnKey,
+          sortOrder: current.sortOrder === "asc" ? "desc" : "asc",
+        };
+      }
+
+      return {
+        sortBy: columnKey,
+        sortOrder: "asc",
+      };
+    });
   }
 
   function startEdit(application) {
@@ -255,10 +335,16 @@ export default function App() {
         await createApplication(payload);
       }
 
+      const firstPage = {
+        ...pagination,
+        page: 1,
+      };
+
       setForm(EMPTY_APPLICATION_FORM);
       setEditingId(null);
+      setPagination(firstPage);
       setMessage(isEditing ? "Application updated successfully." : "Application saved successfully.");
-      await refreshDashboardData(filters);
+      await refreshDashboardData(filters, firstPage, sort);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -294,15 +380,23 @@ export default function App() {
 
     try {
       const result = await importApplicationsCSV(file);
+      const firstPage = {
+        ...pagination,
+        page: 1,
+      };
+
       setCSVImportResult(result);
+      setPagination(firstPage);
 
       if (result.failed > 0) {
         setError(`CSV import completed with ${result.failed} failed row(s).`);
       } else {
-        setMessage(`CSV import completed. Imported ${result.imported} row(s).`);
+        setMessage(
+          `CSV import completed. Imported ${result.imported || 0}, updated ${result.updated || 0}, skipped ${result.skipped || 0}.`
+        );
       }
 
-      await refreshDashboardData(filters);
+      await refreshDashboardData(filters, firstPage, sort);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -320,7 +414,7 @@ export default function App() {
       await deleteCVVersion(id);
       setMessage("CV version deleted.");
       await refreshCVVersions();
-      await refreshDashboardData(filters);
+      await refreshDashboardData(filters, pagination, sort);
     } catch (err) {
       setError(err.message);
     }
@@ -339,7 +433,7 @@ export default function App() {
       if (historyApplication?.id === id) closeHistory();
 
       setMessage("Application deleted.");
-      await refreshDashboardData(filters);
+      await refreshDashboardData(filters, pagination, sort);
     } catch (err) {
       setError(err.message);
     }
@@ -381,10 +475,10 @@ export default function App() {
       </section>
 
       <section className="summary-grid">
-        <SummaryCard label="Visible Applications" value={summary.total} />
-        <SummaryCard label="Applied" value={summary.applied} tone="blue" />
-        <SummaryCard label="Interviews" value={summary.interviews} tone="purple" />
-        <SummaryCard label="High Priority" value={summary.highPriority} tone="red" />
+        <SummaryCard label="Page Applications" value={summary.total} />
+        <SummaryCard label="Applied On Page" value={summary.applied} tone="blue" />
+        <SummaryCard label="Interviews On Page" value={summary.interviews} tone="purple" />
+        <SummaryCard label="High Priority On Page" value={summary.highPriority} tone="red" />
       </section>
 
       <section className="summary-grid secondary-summary-grid">
@@ -452,10 +546,15 @@ export default function App() {
           <ApplicationsTable
             applications={applications}
             listLoading={listLoading}
-            onRefresh={() => refreshApplications(filters)}
+            pagination={pagination}
+            sort={sort}
+            onRefresh={() => refreshApplications(filters, pagination, sort)}
             onEdit={startEdit}
             onDelete={removeApplication}
             onHistory={openHistory}
+            onPageChange={changePage}
+            onPageSizeChange={changePageSize}
+            onSortChange={changeSort}
           />
         </div>
       </section>

@@ -3,6 +3,8 @@ package repository
 import (
 	"context"
 	"errors"
+	"math"
+	"strings"
 
 	"github.com/KrishnaTejaCheruku/jobops-tracker/apps/backend/internal/models"
 	"github.com/jackc/pgx/v5"
@@ -77,34 +79,39 @@ const applicationSelectColumns = `
 	updated_at
 `
 
+const applicationFilterWhereClause = `
+	WHERE
+		(
+			$1 = ''
+			OR job_title ILIKE '%' || $1 || '%'
+			OR company_name ILIKE '%' || $1 || '%'
+			OR source ILIKE '%' || $1 || '%'
+			OR job_url ILIKE '%' || $1 || '%'
+			OR location ILIKE '%' || $1 || '%'
+			OR work_mode ILIKE '%' || $1 || '%'
+			OR status ILIKE '%' || $1 || '%'
+			OR cv_version ILIKE '%' || $1 || '%'
+			OR salary_range ILIKE '%' || $1 || '%'
+			OR recruiter_name ILIKE '%' || $1 || '%'
+			OR recruiter_email ILIKE '%' || $1 || '%'
+			OR job_description ILIKE '%' || $1 || '%'
+			OR priority ILIKE '%' || $1 || '%'
+			OR notes ILIKE '%' || $1 || '%'
+		)
+		AND ($2 = '' OR status = $2)
+		AND ($3 = '' OR priority = $3)
+		AND ($4 = '' OR source = $4)
+		AND ($5 = '' OR work_mode = $5)
+`
+
 func (r *ApplicationRepository) List(ctx context.Context, filters models.ApplicationFilters) ([]models.Application, error) {
+	orderBy, _, _ := buildApplicationOrderBy(models.ApplicationSort{})
+
 	rows, err := r.DB.Query(ctx, `
 		SELECT `+applicationSelectColumns+`
 		FROM applications
-		WHERE
-			(
-				$1 = ''
-				OR job_title ILIKE '%' || $1 || '%'
-				OR company_name ILIKE '%' || $1 || '%'
-				OR source ILIKE '%' || $1 || '%'
-				OR job_url ILIKE '%' || $1 || '%'
-				OR location ILIKE '%' || $1 || '%'
-				OR work_mode ILIKE '%' || $1 || '%'
-				OR status ILIKE '%' || $1 || '%'
-				OR cv_version ILIKE '%' || $1 || '%'
-				OR salary_range ILIKE '%' || $1 || '%'
-				OR recruiter_name ILIKE '%' || $1 || '%'
-				OR recruiter_email ILIKE '%' || $1 || '%'
-				OR job_description ILIKE '%' || $1 || '%'
-				OR priority ILIKE '%' || $1 || '%'
-				OR notes ILIKE '%' || $1 || '%'
-			)
-			AND ($2 = '' OR status = $2)
-			AND ($3 = '' OR priority = $3)
-			AND ($4 = '' OR source = $4)
-			AND ($5 = '' OR work_mode = $5)
-		ORDER BY created_at DESC
-	`,
+		`+applicationFilterWhereClause+`
+		`+orderBy,
 		filters.Search,
 		filters.Status,
 		filters.Priority,
@@ -116,6 +123,98 @@ func (r *ApplicationRepository) List(ctx context.Context, filters models.Applica
 	}
 	defer rows.Close()
 
+	return scanApplicationRows(rows)
+}
+
+func (r *ApplicationRepository) ListPaginated(
+	ctx context.Context,
+	filters models.ApplicationFilters,
+	pagination models.ApplicationPagination,
+	sort models.ApplicationSort,
+) (*models.PaginatedApplicationsResponse, error) {
+	page := pagination.Page
+	pageSize := pagination.PageSize
+
+	if page < 1 {
+		page = 1
+	}
+
+	if pageSize < 1 {
+		pageSize = 10
+	}
+
+	if pageSize > 100 {
+		pageSize = 100
+	}
+
+	orderBy, normalizedSortBy, normalizedSortOrder := buildApplicationOrderBy(sort)
+
+	totalItems, err := r.Count(ctx, filters)
+	if err != nil {
+		return nil, err
+	}
+
+	offset := (page - 1) * pageSize
+
+	rows, err := r.DB.Query(ctx, `
+		SELECT `+applicationSelectColumns+`
+		FROM applications
+		`+applicationFilterWhereClause+`
+		`+orderBy+`
+		LIMIT $6 OFFSET $7
+	`,
+		filters.Search,
+		filters.Status,
+		filters.Priority,
+		filters.Source,
+		filters.WorkMode,
+		pageSize,
+		offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	applications, err := scanApplicationRows(rows)
+	if err != nil {
+		return nil, err
+	}
+
+	totalPages := 0
+	if totalItems > 0 {
+		totalPages = int(math.Ceil(float64(totalItems) / float64(pageSize)))
+	}
+
+	return &models.PaginatedApplicationsResponse{
+		Items:      applications,
+		Page:       page,
+		PageSize:   pageSize,
+		TotalItems: totalItems,
+		TotalPages: totalPages,
+		SortBy:     normalizedSortBy,
+		SortOrder:  normalizedSortOrder,
+	}, nil
+}
+
+func (r *ApplicationRepository) Count(ctx context.Context, filters models.ApplicationFilters) (int64, error) {
+	var total int64
+
+	err := r.DB.QueryRow(ctx, `
+		SELECT COUNT(*)
+		FROM applications
+		`+applicationFilterWhereClause,
+		filters.Search,
+		filters.Status,
+		filters.Priority,
+		filters.Source,
+		filters.WorkMode,
+	).Scan(&total)
+
+	return total, err
+}
+
+func scanApplicationRows(rows pgx.Rows) ([]models.Application, error) {
 	applications := []models.Application{}
 
 	for rows.Next() {
@@ -128,6 +227,80 @@ func (r *ApplicationRepository) List(ctx context.Context, filters models.Applica
 	}
 
 	return applications, rows.Err()
+}
+
+func buildApplicationOrderBy(sort models.ApplicationSort) (string, string, string) {
+	sortBy := strings.TrimSpace(strings.ToLower(sort.SortBy))
+	sortOrder := strings.TrimSpace(strings.ToLower(sort.SortOrder))
+
+	column := "created_at"
+	normalizedSortBy := "created_at"
+
+	switch sortBy {
+	case "id":
+		column = "id"
+		normalizedSortBy = "id"
+	case "job_title":
+		column = "LOWER(job_title)"
+		normalizedSortBy = "job_title"
+	case "company_name":
+		column = "LOWER(company_name)"
+		normalizedSortBy = "company_name"
+	case "source":
+		column = "LOWER(source)"
+		normalizedSortBy = "source"
+	case "location":
+		column = "LOWER(location)"
+		normalizedSortBy = "location"
+	case "work_mode":
+		column = "LOWER(work_mode)"
+		normalizedSortBy = "work_mode"
+	case "status":
+		column = "LOWER(status)"
+		normalizedSortBy = "status"
+	case "priority":
+		column = prioritySortExpression()
+		normalizedSortBy = "priority"
+	case "salary_range":
+		column = "LOWER(salary_range)"
+		normalizedSortBy = "salary_range"
+	case "follow_up_date":
+		column = "follow_up_date"
+		normalizedSortBy = "follow_up_date"
+	case "applied_date":
+		column = "applied_date"
+		normalizedSortBy = "applied_date"
+	case "recruiter_name":
+		column = "LOWER(recruiter_name)"
+		normalizedSortBy = "recruiter_name"
+	case "cv_version":
+		column = "LOWER(cv_version)"
+		normalizedSortBy = "cv_version"
+	case "updated_at":
+		column = "updated_at"
+		normalizedSortBy = "updated_at"
+	case "created_at", "":
+		column = "created_at"
+		normalizedSortBy = "created_at"
+	}
+
+	normalizedSortOrder := "desc"
+	if sortOrder == "asc" {
+		normalizedSortOrder = "asc"
+	}
+
+	return "ORDER BY " + column + " " + normalizedSortOrder + " NULLS LAST, id DESC", normalizedSortBy, normalizedSortOrder
+}
+
+func prioritySortExpression() string {
+	return `
+		CASE priority
+			WHEN 'High' THEN 3
+			WHEN 'Medium' THEN 2
+			WHEN 'Low' THEN 1
+			ELSE 0
+		END
+	`
 }
 
 func (r *ApplicationRepository) GetByID(ctx context.Context, id int64) (*models.Application, error) {
