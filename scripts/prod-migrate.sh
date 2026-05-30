@@ -13,6 +13,10 @@ echo "Applying production database migrations using $ENV_FILE"
 
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d postgres
 
+echo "Waiting for PostgreSQL to become ready..."
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T postgres \
+  sh -lc 'until pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do echo "PostgreSQL is not ready yet..."; sleep 2; done'
+
 for file in apps/backend/migrations/*.sql; do
   echo "Applying $file"
   docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T postgres \
