@@ -1,0 +1,45 @@
+name: Deploy to VPS
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Git branch to deploy"
+        required: true
+        default: "main"
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy application on VPS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validate required secrets
+        run: |
+          test -n "${{ secrets.VPS_HOST }}" || (echo "Missing VPS_HOST secret" && exit 1)
+          test -n "${{ secrets.VPS_USER }}" || (echo "Missing VPS_USER secret" && exit 1)
+          test -n "${{ secrets.VPS_SSH_KEY }}" || (echo "Missing VPS_SSH_KEY secret" && exit 1)
+          test -n "${{ secrets.VPS_APP_DIR }}" || (echo "Missing VPS_APP_DIR secret" && exit 1)
+
+      - name: Configure SSH key
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/jobops_vps_key
+          chmod 600 ~/.ssh/jobops_vps_key
+          ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Deploy over SSH
+        run: |
+          ssh -i ~/.ssh/jobops_vps_key \
+            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
+            "set -euo pipefail
+             cd '${{ secrets.VPS_APP_DIR }}'
+             git fetch origin
+             git checkout '${{ github.event.inputs.branch }}'
+             git pull --ff-only origin '${{ github.event.inputs.branch }}'
+             ./scripts/prod-deploy.sh .env.production
+             ./scripts/prod-ops.sh status .env.production"

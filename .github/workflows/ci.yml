@@ -1,0 +1,126 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend fmt and tests
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: apps/backend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.x"
+          cache-dependency-path: apps/backend/go.sum
+
+      - name: Check gofmt
+        run: |
+          unformatted="$(gofmt -l .)"
+          if [ -n "$unformatted" ]; then
+            echo "The following Go files are not formatted:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: Run backend tests
+        run: go test ./...
+
+  frontend:
+    name: Frontend build
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: apps/frontend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: apps/frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+
+      - name: Build frontend
+        run: npm run build
+
+  docker:
+    name: Docker image build
+    runs-on: ubuntu-latest
+    needs:
+      - backend
+      - frontend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build backend image
+        run: |
+          docker build \
+            -t jobops-tracker-backend:ci \
+            apps/backend
+
+      - name: Build frontend production image
+        run: |
+          docker build \
+            -t jobops-tracker-frontend:ci \
+            -f apps/frontend/Dockerfile.prod \
+            --build-arg VITE_API_BASE_URL=/api \
+            apps/frontend
+
+  helm:
+    name: Helm lint and template
+    runs-on: ubuntu-latest
+    needs:
+      - docker
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Lint Helm chart
+        run: helm lint infra/helm/jobops-tracker
+
+      - name: Render Helm chart
+        run: |
+          helm template jobops-tracker infra/helm/jobops-tracker \
+            -n jobops-tracker > /tmp/jobops-helm-rendered.yaml
+
+      - name: Check rendered Helm output
+        run: |
+          grep -q "enableServiceLinks: false" /tmp/jobops-helm-rendered.yaml
+          grep -q "kind: StatefulSet" /tmp/jobops-helm-rendered.yaml
+          grep -q "kind: Job" /tmp/jobops-helm-rendered.yaml
+          grep -q "jobops-tracker-backend" /tmp/jobops-helm-rendered.yaml
