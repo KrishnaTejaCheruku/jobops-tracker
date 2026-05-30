@@ -53,3 +53,6 @@ real-applications/
 .env.production
 .env.production.local
 .env.*.local
+
+# Local database backups
+backups/
