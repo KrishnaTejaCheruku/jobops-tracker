@@ -1,0 +1,48 @@
+---
+- name: Update apt package cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Install base packages
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+      - git
+      - gnupg
+      - htop
+      - nano
+      - ufw
+    state: present
+
+- name: Check whether Docker is installed
+  ansible.builtin.command: docker --version
+  register: docker_version
+  changed_when: false
+  failed_when: false
+
+- name: Install Docker using official convenience script
+  ansible.builtin.shell: |
+    set -e
+    curl -fsSL https://get.docker.com | sh
+  args:
+    executable: /bin/bash
+  when: docker_version.rc != 0
+
+- name: Enable and start Docker service
+  ansible.builtin.systemd:
+    name: docker
+    enabled: true
+    state: started
+
+- name: Check Docker Compose plugin
+  ansible.builtin.command: docker compose version
+  register: docker_compose_version
+  changed_when: false
+  failed_when: false
+
+- name: Fail if Docker Compose plugin is missing
+  ansible.builtin.fail:
+    msg: Docker Compose plugin is missing after Docker installation.
+  when: docker_compose_version.rc != 0

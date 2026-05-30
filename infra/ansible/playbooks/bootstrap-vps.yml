@@ -1,0 +1,8 @@
+---
+- name: Bootstrap VPS for JobOps Tracker
+  hosts: jobops_vps
+  become: true
+
+  roles:
+    - docker
+    - firewall

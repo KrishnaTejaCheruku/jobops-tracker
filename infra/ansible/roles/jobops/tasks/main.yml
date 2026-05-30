@@ -1,0 +1,45 @@
+---
+- name: Validate PostgreSQL password was changed
+  ansible.builtin.fail:
+    msg: postgres_password must be changed before deployment.
+  when: postgres_password == "change-this-before-running"
+
+- name: Ensure application parent directory exists
+  ansible.builtin.file:
+    path: "{{ jobops_app_dir | dirname }}"
+    state: directory
+    mode: "0755"
+
+- name: Clone or update JobOps Tracker repository
+  ansible.builtin.git:
+    repo: "{{ jobops_repo_url }}"
+    dest: "{{ jobops_app_dir }}"
+    version: "{{ jobops_branch }}"
+    update: true
+    force: true
+
+- name: Render production environment file
+  ansible.builtin.template:
+    src: env.production.j2
+    dest: "{{ jobops_app_dir }}/.env.production"
+    mode: "0600"
+
+- name: Ensure deployment scripts are executable
+  ansible.builtin.file:
+    path: "{{ jobops_app_dir }}/{{ item }}"
+    mode: "0755"
+  loop:
+    - scripts/prod-deploy.sh
+    - scripts/prod-migrate.sh
+    - scripts/prod-ops.sh
+
+- name: Deploy JobOps Tracker production stack
+  ansible.builtin.command: ./scripts/prod-deploy.sh .env.production
+  args:
+    chdir: "{{ jobops_app_dir }}"
+  register: jobops_deploy
+  changed_when: true
+
+- name: Show deployment output
+  ansible.builtin.debug:
+    var: jobops_deploy.stdout_lines

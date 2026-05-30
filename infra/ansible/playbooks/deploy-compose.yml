@@ -1,0 +1,7 @@
+---
+- name: Deploy JobOps Tracker with Docker Compose
+  hosts: jobops_vps
+  become: true
+
+  roles:
+    - jobops
