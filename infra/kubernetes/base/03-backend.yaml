@@ -1,0 +1,83 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jobops-backend-config
+  namespace: jobops-tracker
+data:
+  APP_NAME: jobops-tracker
+  APP_ENV: kubernetes-local
+  SERVER_PORT: "8000"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: jobops-tracker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      enableServiceLinks: false
+      containers:
+        - name: backend
+          image: jobops-tracker-backend:0.2.0
+          imagePullPolicy: Never
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            - name: APP_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: jobops-backend-config
+                  key: APP_NAME
+            - name: APP_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: jobops-backend-config
+                  key: APP_ENV
+            - name: SERVER_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: jobops-backend-config
+                  key: SERVER_PORT
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: jobops-postgres-secret
+                  key: DATABASE_URL
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 8
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: jobops-tracker
+spec:
+  selector:
+    app: backend
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
