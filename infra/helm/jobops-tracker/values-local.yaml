@@ -1,0 +1,17 @@
+backend:
+  image:
+    repository: jobops-tracker-backend
+    tag: "0.2.0"
+    pullPolicy: Never
+  env:
+    appEnv: kubernetes-local
+
+frontend:
+  image:
+    repository: jobops-tracker-frontend
+    tag: "0.2.0"
+    pullPolicy: Never
+
+postgres:
+  auth:
+    password: jobops-local-password
