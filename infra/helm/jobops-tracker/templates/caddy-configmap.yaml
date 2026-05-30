@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "jobops-tracker.caddyConfigName" . }}
+  labels:
+    {{- include "jobops-tracker.labels" . | nindent 4 }}
+    app.kubernetes.io/component: caddy
+data:
+  Caddyfile: |
+    :80 {
+        encode zstd gzip
+
+        handle_path /api/* {
+            reverse_proxy {{ include "jobops-tracker.backendName" . }}:{{ .Values.backend.service.port }}
+        }
+
+        handle {
+            reverse_proxy {{ include "jobops-tracker.frontendName" . }}:{{ .Values.frontend.service.port }}
+        }
+    }

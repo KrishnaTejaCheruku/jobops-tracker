@@ -1,0 +1,64 @@
+nameOverride: ""
+fullnameOverride: ""
+
+backend:
+  replicaCount: 1
+  image:
+    repository: jobops-tracker-backend
+    tag: "0.2.0"
+    pullPolicy: Never
+  service:
+    port: 8000
+  env:
+    appName: jobops-tracker
+    appEnv: kubernetes-local
+    serverPort: "8000"
+  probes:
+    enabled: true
+
+frontend:
+  replicaCount: 1
+  image:
+    repository: jobops-tracker-frontend
+    tag: "0.2.0"
+    pullPolicy: Never
+  service:
+    port: 80
+  probes:
+    enabled: true
+
+caddy:
+  replicaCount: 1
+  image:
+    repository: caddy
+    tag: "2.8-alpine"
+    pullPolicy: IfNotPresent
+  service:
+    port: 80
+  probes:
+    enabled: true
+
+postgres:
+  image:
+    repository: postgres
+    tag: "16-alpine"
+    pullPolicy: IfNotPresent
+  auth:
+    database: jobops
+    username: jobops
+    password: jobops-local-password
+  service:
+    port: 5432
+  persistence:
+    enabled: true
+    size: 1Gi
+    storageClassName: ""
+  probes:
+    enabled: true
+
+migrations:
+  enabled: true
+  image:
+    repository: postgres
+    tag: "16-alpine"
+    pullPolicy: IfNotPresent

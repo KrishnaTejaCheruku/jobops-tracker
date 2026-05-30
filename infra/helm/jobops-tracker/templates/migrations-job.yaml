@@ -1,0 +1,73 @@
+{{- if .Values.migrations.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "jobops-tracker.fullname" . }}-migrate
+  labels:
+    {{- include "jobops-tracker.labels" . | nindent 4 }}
+    app.kubernetes.io/component: migrations
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        {{- include "jobops-tracker.labels" . | nindent 8 }}
+        app.kubernetes.io/component: migrations
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: migrate
+          image: "{{ .Values.migrations.image.repository }}:{{ .Values.migrations.image.tag }}"
+          imagePullPolicy: {{ .Values.migrations.image.pullPolicy }}
+          env:
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "jobops-tracker.postgresSecretName" . }}
+                  key: POSTGRES_DB
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "jobops-tracker.postgresSecretName" . }}
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "jobops-tracker.postgresSecretName" . }}
+                  key: POSTGRES_PASSWORD
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "jobops-tracker.postgresSecretName" . }}
+                  key: POSTGRES_PASSWORD
+          command:
+            - sh
+            - -ec
+            - |
+              echo "Waiting for PostgreSQL..."
+              until pg_isready -h {{ include "jobops-tracker.postgresName" . }} -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do
+                sleep 2
+              done
+
+              for file in /migrations/*.sql; do
+                [ -e "$file" ] || continue
+                echo "Applying $file"
+                psql -v ON_ERROR_STOP=1 \
+                  -h {{ include "jobops-tracker.postgresName" . }} \
+                  -U "$POSTGRES_USER" \
+                  -d "$POSTGRES_DB" < "$file"
+              done
+
+              echo "Migrations completed."
+          volumeMounts:
+            - name: migrations
+              mountPath: /migrations
+      volumes:
+        - name: migrations
+          configMap:
+            name: {{ include "jobops-tracker.migrationsConfigName" . }}
+{{- end }}

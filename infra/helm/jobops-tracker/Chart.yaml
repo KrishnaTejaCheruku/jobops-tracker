@@ -1,0 +1,6 @@
+apiVersion: v2
+name: jobops-tracker
+description: A Helm chart for JobOps Tracker
+type: application
+version: 0.1.0
+appVersion: "0.2.0"

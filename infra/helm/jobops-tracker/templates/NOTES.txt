@@ -1,0 +1,22 @@
+JobOps Tracker has been deployed.
+
+Namespace:
+  {{ .Release.Namespace }}
+
+Release:
+  {{ .Release.Name }}
+
+Check pods:
+  kubectl get pods -n {{ .Release.Namespace }} -o wide
+
+Check services:
+  kubectl get svc -n {{ .Release.Namespace }}
+
+Port-forward the Caddy gateway:
+  kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "jobops-tracker.caddyName" . }} 8081:80
+
+Open:
+  http://localhost:8081
+
+Health check:
+  curl http://localhost:8081/api/health

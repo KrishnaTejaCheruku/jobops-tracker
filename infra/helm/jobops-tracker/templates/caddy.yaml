@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "jobops-tracker.caddyName" . }}
+  labels:
+    {{- include "jobops-tracker.labels" . | nindent 4 }}
+    app.kubernetes.io/component: caddy
+spec:
+  replicas: {{ .Values.caddy.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: caddy
+  template:
+    metadata:
+      labels:
+        {{- include "jobops-tracker.labels" . | nindent 8 }}
+        app.kubernetes.io/component: caddy
+    spec:
+      containers:
+        - name: caddy
+          image: "{{ .Values.caddy.image.repository }}:{{ .Values.caddy.image.tag }}"
+          imagePullPolicy: {{ .Values.caddy.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.caddy.service.port }}
+          volumeMounts:
+            - name: caddy-config
+              mountPath: /etc/caddy/Caddyfile
+              subPath: Caddyfile
+          {{- if .Values.caddy.probes.enabled }}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
+          {{- end }}
+      volumes:
+        - name: caddy-config
+          configMap:
+            name: {{ include "jobops-tracker.caddyConfigName" . }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "jobops-tracker.caddyName" . }}
+  labels:
+    {{- include "jobops-tracker.labels" . | nindent 4 }}
+    app.kubernetes.io/component: caddy
+spec:
+  selector:
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: caddy
+  ports:
+    - name: http
+      port: {{ .Values.caddy.service.port }}
+      targetPort: http

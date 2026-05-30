@@ -1,0 +1,11 @@
+{{- if .Values.migrations.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "jobops-tracker.migrationsConfigName" . }}
+  labels:
+    {{- include "jobops-tracker.labels" . | nindent 4 }}
+    app.kubernetes.io/component: migrations
+data:
+{{- (.Files.Glob "files/migrations/*.sql").AsConfig | nindent 2 }}
+{{- end }}
