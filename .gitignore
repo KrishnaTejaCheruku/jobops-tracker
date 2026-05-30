@@ -53,6 +53,7 @@ real-applications/
 .env.production
 .env.production.local
 .env.*.local
+infra/ansible/inventory.ini
 
 # Local database backups
 backups/
