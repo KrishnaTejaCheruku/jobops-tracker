@@ -9,6 +9,7 @@ import (
 	"github.com/KrishnaTejaCheruku/jobops-tracker/apps/backend/internal/database"
 	"github.com/KrishnaTejaCheruku/jobops-tracker/apps/backend/internal/handlers"
 	"github.com/KrishnaTejaCheruku/jobops-tracker/apps/backend/internal/repository"
+	"github.com/KrishnaTejaCheruku/jobops-tracker/apps/backend/internal/services"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
@@ -32,6 +33,9 @@ func main() {
 		AllowOrigins: []string{
 			"http://localhost:5173",
 			"http://localhost:3000",
+			"http://localhost:8080",
+			"http://localhost:8081",
+			"http://94.130.75.66",
 		},
 		AllowMethods: []string{
 			http.MethodGet,
@@ -46,11 +50,19 @@ func main() {
 			"Accept",
 			"Authorization",
 		},
+		ExposeHeaders: []string{
+			"Content-Length",
+			"Content-Disposition",
+		},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
 
 	healthHandler := handlers.NewHealthHandler(db)
+
+	authRepo := repository.NewAuthRepository(db)
+	otpService := services.NewOTPServiceFromEnv()
+	authHandler := handlers.NewAuthHandler(authRepo, otpService)
 
 	applicationRepo := repository.NewApplicationRepository(db)
 	applicationHandler := handlers.NewApplicationHandler(applicationRepo)
@@ -71,6 +83,11 @@ func main() {
 	})
 
 	router.GET("/health", healthHandler.HealthCheck)
+
+	router.POST("/auth/request-otp", authHandler.RequestOTP)
+	router.POST("/auth/verify-otp", authHandler.VerifyOTP)
+	router.GET("/auth/me", authHandler.Me)
+	router.POST("/auth/logout", authHandler.Logout)
 
 	router.GET("/applications", applicationHandler.ListApplications)
 	router.POST("/applications", applicationHandler.CreateApplication)
