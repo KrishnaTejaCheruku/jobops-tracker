@@ -1,0 +1,19 @@
+project_name = "jobops-tracker"
+
+server_name  = "jobops-vps"
+server_type  = "cx23"
+server_image = "ubuntu-24.04"
+location     = "nbg1"
+
+ssh_key_name        = "jobops-macbook"
+ssh_public_key_path = "~/.ssh/id_ed25519.pub"
+
+# Later, restrict this to your own public IP:
+# ssh_allowed_ips = ["YOUR_PUBLIC_IP/32"]
+ssh_allowed_ips = ["0.0.0.0/0", "::/0"]
+
+labels = {
+  app        = "jobops-tracker"
+  managed_by = "opentofu"
+  env        = "production"
+}

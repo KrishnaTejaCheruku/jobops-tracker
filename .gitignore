@@ -57,3 +57,12 @@ infra/ansible/inventory.ini
 
 # Local database backups
 backups/
+
+# OpenTofu / Terraform local state and secrets
+**/.terraform/
+**/*.tfstate
+**/*.tfstate.*
+**/terraform.tfvars
+**/*.auto.tfvars
+crash.log
+crash.*.log
