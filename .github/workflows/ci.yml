@@ -72,6 +72,27 @@ jobs:
       - name: Build frontend
         run: npm run build
 
+      - name: Start frontend dev server
+        run: |
+          npm run dev -- --strictPort > /tmp/jobops-vite.log 2>&1 &
+          echo "$!" > /tmp/jobops-vite.pid
+
+      - name: Wait for frontend dev server
+        run: |
+          for attempt in {1..30}; do
+            if curl -fsS http://localhost:5173 > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+
+          echo "Frontend dev server did not become ready"
+          cat /tmp/jobops-vite.log
+          exit 1
+
+      - name: Run Cypress e2e tests
+        run: npm run test:e2e
+
   docker:
     name: Docker image build
     runs-on: ubuntu-latest
