@@ -26,6 +26,10 @@ build/
 # Logs
 *.log
 
+# Cypress
+cypress/screenshots/
+cypress/videos/
+
 # Docker
 .docker/
 
