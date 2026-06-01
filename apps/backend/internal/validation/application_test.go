@@ -135,6 +135,39 @@ func TestValidateCreateApplicationAllowsTodayAppliedDate(t *testing.T) {
 	}
 }
 
+func TestValidateCreateApplicationAllowsHistoricalAppliedDate(t *testing.T) {
+	req := models.CreateApplicationRequest{
+		JobTitle:    "DevOps Engineer",
+		CompanyName: "Example GmbH",
+		Status:      "Applied",
+		Priority:    "High",
+		Source:      "LinkedIn",
+		WorkMode:    "Hybrid",
+		AppliedDate: time.Now().AddDate(0, 0, -30).Format("2006-01-02"),
+	}
+
+	if err := ValidateCreateApplication(req); err != nil {
+		t.Fatalf("expected historical applied_date to be valid, got error: %v", err)
+	}
+}
+
+func TestValidateCreateApplicationAllowsFutureFollowUpDate(t *testing.T) {
+	req := models.CreateApplicationRequest{
+		JobTitle:     "DevOps Engineer",
+		CompanyName:  "Example GmbH",
+		Status:       "Applied",
+		Priority:     "High",
+		Source:       "LinkedIn",
+		WorkMode:     "Hybrid",
+		AppliedDate:  time.Now().Format("2006-01-02"),
+		FollowUpDate: time.Now().AddDate(0, 0, 7).Format("2006-01-02"),
+	}
+
+	if err := ValidateCreateApplication(req); err != nil {
+		t.Fatalf("expected future follow_up_date to be valid, got error: %v", err)
+	}
+}
+
 func TestValidateUpdateApplicationRejectsFutureAppliedDate(t *testing.T) {
 	req := models.UpdateApplicationRequest{
 		JobTitle:    "DevOps Engineer",
