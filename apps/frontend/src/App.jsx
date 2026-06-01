@@ -4,6 +4,7 @@ import AnalyticsDashboard from "./components/AnalyticsDashboard";
 import ApplicationDetailModal from "./components/ApplicationDetailModal";
 import ApplicationForm from "./components/ApplicationForm";
 import ApplicationsTable from "./components/ApplicationsTable";
+import AuthGate from "./components/AuthGate";
 import CSVDataPanel from "./components/CSVDataPanel";
 import CVVersionsPanel from "./components/CVVersionsPanel";
 import FiltersBar from "./components/FiltersBar";
@@ -88,7 +89,7 @@ function getInitialTheme() {
   return "light";
 }
 
-export default function App() {
+function AppContent() {
   const [theme, setTheme] = useState(getInitialTheme);
   const [form, setForm] = useState(EMPTY_APPLICATION_FORM);
   const [fieldErrors, setFieldErrors] = useState({});
@@ -137,7 +138,7 @@ export default function App() {
       total: applications.length,
       applied: applications.filter((app) => app.status === "Applied").length,
       interviews: applications.filter((app) =>
-        ["Interview Scheduled", "Technical Interview"].includes(app.status)
+        ["Interview Scheduled", "Technical Interview"].includes(app.status),
       ).length,
       highPriority: applications.filter((app) => app.priority === "High").length,
     };
@@ -175,10 +176,14 @@ export default function App() {
     setError("");
 
     try {
-      const data = await listApplications(activeFilters, {
-        page: activePagination.page,
-        pageSize: activePagination.pageSize,
-      }, activeSort);
+      const data = await listApplications(
+        activeFilters,
+        {
+          page: activePagination.page,
+          pageSize: activePagination.pageSize,
+        },
+        activeSort,
+      );
 
       setApplications(data.items || []);
       setPagination((current) => ({
@@ -454,7 +459,7 @@ export default function App() {
         setError(`CSV import completed with ${result.failed} failed row(s).`);
       } else {
         setMessage(
-          `CSV import completed. Imported ${result.imported || 0}, updated ${result.updated || 0}, skipped ${result.skipped || 0}.`
+          `CSV import completed. Imported ${result.imported || 0}, updated ${result.updated || 0}, skipped ${result.skipped || 0}.`,
         );
       }
 
@@ -641,5 +646,13 @@ export default function App() {
         onClose={closeHistory}
       />
     </main>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthGate>
+      <AppContent />
+    </AuthGate>
   );
 }
