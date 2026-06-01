@@ -3,56 +3,76 @@ name: jobops-tracker-prod
 services:
   postgres:
     image: postgres:16-alpine
-    restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-jobops}
       POSTGRES_USER: ${POSTGRES_USER:-jobops}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - jobops_postgres_data:/var/lib/postgresql/data
+    networks:
+      - jobops-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      test:
+        - CMD-SHELL
+        - pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"
       interval: 10s
       timeout: 5s
       retries: 10
-    networks:
-      - jobops-net
+      start_period: 20s
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
 
   backend:
-    image: jobops-tracker-backend:${APP_VERSION:-0.2.0}
+    image: jobops-tracker-backend:${APP_VERSION:-latest}
     build:
       context: ../../apps/backend
       dockerfile: Dockerfile
-    restart: unless-stopped
     environment:
       APP_NAME: jobops-tracker
       APP_ENV: production
-      SERVER_PORT: 8000
+      GIN_MODE: release
+      SERVER_PORT: "8000"
       DATABASE_URL: postgres://${POSTGRES_USER:-jobops}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-jobops}?sslmode=disable
     depends_on:
       postgres:
         condition: service_healthy
-    expose:
-      - "8000"
     networks:
       - jobops-net
+    expose:
+      - "8000"
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
 
   frontend:
-    image: jobops-tracker-frontend:${APP_VERSION:-0.2.0}
+    image: jobops-tracker-frontend:${APP_VERSION:-latest}
     build:
       context: ../../apps/frontend
       dockerfile: Dockerfile.prod
       args:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
-    restart: unless-stopped
-    expose:
-      - "80"
+    depends_on:
+      - backend
     networks:
       - jobops-net
+    expose:
+      - "80"
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
 
   caddy:
     image: caddy:2.8-alpine
-    restart: unless-stopped
     environment:
       JOBOPS_SITE_ADDRESS: ${JOBOPS_SITE_ADDRESS:-:80}
       ACME_EMAIL: ${ACME_EMAIL:-admin@example.com}
@@ -63,17 +83,25 @@ services:
       - ../caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
+      - caddy_logs:/var/log/caddy
     depends_on:
       - frontend
       - backend
     networks:
       - jobops-net
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+networks:
+  jobops-net:
+    driver: bridge
 
 volumes:
   jobops_postgres_data:
   caddy_data:
   caddy_config:
-
-networks:
-  jobops-net:
-    driver: bridge
+  caddy_logs:
