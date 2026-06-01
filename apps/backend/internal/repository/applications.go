@@ -80,31 +80,31 @@ const applicationSelectColumns = `
 `
 
 const applicationFilterWhereClause = `
-	WHERE
-		(
-			$1 = ''
-			OR job_title ILIKE '%' || $1 || '%'
-			OR company_name ILIKE '%' || $1 || '%'
-			OR source ILIKE '%' || $1 || '%'
-			OR job_url ILIKE '%' || $1 || '%'
-			OR location ILIKE '%' || $1 || '%'
-			OR work_mode ILIKE '%' || $1 || '%'
-			OR status ILIKE '%' || $1 || '%'
-			OR cv_version ILIKE '%' || $1 || '%'
-			OR salary_range ILIKE '%' || $1 || '%'
-			OR recruiter_name ILIKE '%' || $1 || '%'
-			OR recruiter_email ILIKE '%' || $1 || '%'
-			OR job_description ILIKE '%' || $1 || '%'
-			OR priority ILIKE '%' || $1 || '%'
-			OR notes ILIKE '%' || $1 || '%'
+	WHERE user_id = $1
+		AND (
+			$2 = ''
+			OR job_title ILIKE '%' || $2 || '%'
+			OR company_name ILIKE '%' || $2 || '%'
+			OR source ILIKE '%' || $2 || '%'
+			OR job_url ILIKE '%' || $2 || '%'
+			OR location ILIKE '%' || $2 || '%'
+			OR work_mode ILIKE '%' || $2 || '%'
+			OR status ILIKE '%' || $2 || '%'
+			OR cv_version ILIKE '%' || $2 || '%'
+			OR salary_range ILIKE '%' || $2 || '%'
+			OR recruiter_name ILIKE '%' || $2 || '%'
+			OR recruiter_email ILIKE '%' || $2 || '%'
+			OR job_description ILIKE '%' || $2 || '%'
+			OR priority ILIKE '%' || $2 || '%'
+			OR notes ILIKE '%' || $2 || '%'
 		)
-		AND ($2 = '' OR status = $2)
-		AND ($3 = '' OR priority = $3)
-		AND ($4 = '' OR source = $4)
-		AND ($5 = '' OR work_mode = $5)
+		AND ($3 = '' OR status = $3)
+		AND ($4 = '' OR priority = $4)
+		AND ($5 = '' OR source = $5)
+		AND ($6 = '' OR work_mode = $6)
 `
 
-func (r *ApplicationRepository) List(ctx context.Context, filters models.ApplicationFilters) ([]models.Application, error) {
+func (r *ApplicationRepository) List(ctx context.Context, userID int64, filters models.ApplicationFilters) ([]models.Application, error) {
 	orderBy, _, _ := buildApplicationOrderBy(models.ApplicationSort{})
 
 	rows, err := r.DB.Query(ctx, `
@@ -112,6 +112,7 @@ func (r *ApplicationRepository) List(ctx context.Context, filters models.Applica
 		FROM applications
 		`+applicationFilterWhereClause+`
 		`+orderBy,
+		userID,
 		filters.Search,
 		filters.Status,
 		filters.Priority,
@@ -128,6 +129,7 @@ func (r *ApplicationRepository) List(ctx context.Context, filters models.Applica
 
 func (r *ApplicationRepository) ListPaginated(
 	ctx context.Context,
+	userID int64,
 	filters models.ApplicationFilters,
 	pagination models.ApplicationPagination,
 	sort models.ApplicationSort,
@@ -149,7 +151,7 @@ func (r *ApplicationRepository) ListPaginated(
 
 	orderBy, normalizedSortBy, normalizedSortOrder := buildApplicationOrderBy(sort)
 
-	totalItems, err := r.Count(ctx, filters)
+	totalItems, err := r.Count(ctx, userID, filters)
 	if err != nil {
 		return nil, err
 	}
@@ -161,8 +163,9 @@ func (r *ApplicationRepository) ListPaginated(
 		FROM applications
 		`+applicationFilterWhereClause+`
 		`+orderBy+`
-		LIMIT $6 OFFSET $7
+		LIMIT $7 OFFSET $8
 	`,
+		userID,
 		filters.Search,
 		filters.Status,
 		filters.Priority,
@@ -197,13 +200,14 @@ func (r *ApplicationRepository) ListPaginated(
 	}, nil
 }
 
-func (r *ApplicationRepository) Count(ctx context.Context, filters models.ApplicationFilters) (int64, error) {
+func (r *ApplicationRepository) Count(ctx context.Context, userID int64, filters models.ApplicationFilters) (int64, error) {
 	var total int64
 
 	err := r.DB.QueryRow(ctx, `
 		SELECT COUNT(*)
 		FROM applications
 		`+applicationFilterWhereClause,
+		userID,
 		filters.Search,
 		filters.Status,
 		filters.Priority,
@@ -303,12 +307,13 @@ func prioritySortExpression() string {
 	`
 }
 
-func (r *ApplicationRepository) GetByID(ctx context.Context, id int64) (*models.Application, error) {
+func (r *ApplicationRepository) GetByID(ctx context.Context, userID int64, id int64) (*models.Application, error) {
 	app, err := scanApplication(r.DB.QueryRow(ctx, `
 		SELECT `+applicationSelectColumns+`
 		FROM applications
 		WHERE id = $1
-	`, id))
+		  AND user_id = $2
+	`, id, userID))
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -321,7 +326,7 @@ func (r *ApplicationRepository) GetByID(ctx context.Context, id int64) (*models.
 	return app, nil
 }
 
-func (r *ApplicationRepository) Create(ctx context.Context, req models.CreateApplicationRequest) (*models.Application, error) {
+func (r *ApplicationRepository) Create(ctx context.Context, userID int64, req models.CreateApplicationRequest) (*models.Application, error) {
 	setApplicationDefaults(&req.Source, &req.Status, &req.Priority)
 
 	tx, err := r.DB.Begin(ctx)
@@ -334,6 +339,7 @@ func (r *ApplicationRepository) Create(ctx context.Context, req models.CreateApp
 
 	app, err := scanApplication(tx.QueryRow(ctx, `
 		INSERT INTO applications (
+			user_id,
 			job_title,
 			company_name,
 			source,
@@ -353,14 +359,24 @@ func (r *ApplicationRepository) Create(ctx context.Context, req models.CreateApp
 			applied_date
 		)
 		VALUES (
-			$1, $2, $3, $4,
-			$5, $6, $7, $8,
-			NULLIF($9, 0),
-			$10, NULLIF($11, '')::date,
-			$12, $13, $14, $15,
-			$16, NULLIF($17, '')::date
+			$1,
+			$2, $3, $4, $5,
+			$6, $7, $8, $9,
+			CASE
+				WHEN $10 = 0 THEN NULL
+				ELSE (
+					SELECT id
+					FROM cv_versions
+					WHERE id = $10
+					  AND user_id = $1
+				)
+			END,
+			$11, NULLIF($12, '')::date,
+			$13, $14, $15, $16,
+			$17, NULLIF($18, '')::date
 		)
 		RETURNING `+applicationSelectColumns,
+		userID,
 		req.JobTitle,
 		req.CompanyName,
 		req.Source,
@@ -402,7 +418,7 @@ func (r *ApplicationRepository) Create(ctx context.Context, req models.CreateApp
 	return app, nil
 }
 
-func (r *ApplicationRepository) Update(ctx context.Context, id int64, req models.UpdateApplicationRequest) (*models.Application, error) {
+func (r *ApplicationRepository) Update(ctx context.Context, userID int64, id int64, req models.UpdateApplicationRequest) (*models.Application, error) {
 	setApplicationDefaults(&req.Source, &req.Status, &req.Priority)
 
 	tx, err := r.DB.Begin(ctx)
@@ -418,7 +434,8 @@ func (r *ApplicationRepository) Update(ctx context.Context, id int64, req models
 		SELECT status
 		FROM applications
 		WHERE id = $1
-	`, id).Scan(&currentStatus); err != nil {
+		  AND user_id = $2
+	`, id, userID).Scan(&currentStatus); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
@@ -437,7 +454,15 @@ func (r *ApplicationRepository) Update(ctx context.Context, id int64, req models
 			work_mode = $6,
 			status = $7,
 			cv_version = $8,
-			cv_version_id = NULLIF($9, 0),
+			cv_version_id = CASE
+				WHEN $9 = 0 THEN NULL
+				ELSE (
+					SELECT id
+					FROM cv_versions
+					WHERE id = $9
+					  AND user_id = $19
+				)
+			END,
 			salary_range = $10,
 			follow_up_date = NULLIF($11, '')::date,
 			recruiter_name = $12,
@@ -448,6 +473,7 @@ func (r *ApplicationRepository) Update(ctx context.Context, id int64, req models
 			applied_date = NULLIF($17, '')::date,
 			updated_at = NOW()
 		WHERE id = $18
+		  AND user_id = $19
 		RETURNING `+applicationSelectColumns,
 		req.JobTitle,
 		req.CompanyName,
@@ -467,7 +493,12 @@ func (r *ApplicationRepository) Update(ctx context.Context, id int64, req models
 		req.Notes,
 		req.AppliedDate,
 		id,
+		userID,
 	))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -493,8 +524,12 @@ func (r *ApplicationRepository) Update(ctx context.Context, id int64, req models
 	return app, nil
 }
 
-func (r *ApplicationRepository) Delete(ctx context.Context, id int64) (bool, error) {
-	result, err := r.DB.Exec(ctx, `DELETE FROM applications WHERE id = $1`, id)
+func (r *ApplicationRepository) Delete(ctx context.Context, userID int64, id int64) (bool, error) {
+	result, err := r.DB.Exec(ctx, `
+		DELETE FROM applications
+		WHERE id = $1
+		  AND user_id = $2
+	`, id, userID)
 	if err != nil {
 		return false, err
 	}
@@ -502,19 +537,21 @@ func (r *ApplicationRepository) Delete(ctx context.Context, id int64) (bool, err
 	return result.RowsAffected() > 0, nil
 }
 
-func (r *ApplicationRepository) ListStatusHistory(ctx context.Context, applicationID int64) ([]models.ApplicationStatusHistory, error) {
+func (r *ApplicationRepository) ListStatusHistory(ctx context.Context, userID int64, applicationID int64) ([]models.ApplicationStatusHistory, error) {
 	rows, err := r.DB.Query(ctx, `
 		SELECT
-			id,
-			application_id,
-			old_status,
-			new_status,
-			note,
-			changed_at
-		FROM application_status_history
-		WHERE application_id = $1
-		ORDER BY changed_at DESC, id DESC
-	`, applicationID)
+			h.id,
+			h.application_id,
+			h.old_status,
+			h.new_status,
+			h.note,
+			h.changed_at
+		FROM application_status_history h
+		INNER JOIN applications a ON a.id = h.application_id
+		WHERE h.application_id = $1
+		  AND a.user_id = $2
+		ORDER BY h.changed_at DESC, h.id DESC
+	`, applicationID, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -543,15 +580,15 @@ func (r *ApplicationRepository) ListStatusHistory(ctx context.Context, applicati
 }
 
 func setApplicationDefaults(source *string, status *string, priority *string) {
-	if *source == "" {
+	if strings.TrimSpace(*source) == "" {
 		*source = "LinkedIn"
 	}
 
-	if *status == "" {
+	if strings.TrimSpace(*status) == "" {
 		*status = "Saved"
 	}
 
-	if *priority == "" {
+	if strings.TrimSpace(*priority) == "" {
 		*priority = "Medium"
 	}
 }

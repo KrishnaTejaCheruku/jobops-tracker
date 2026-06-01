@@ -17,7 +17,12 @@ func NewCVVersionHandler(repo *repository.CVVersionRepository) *CVVersionHandler
 }
 
 func (h *CVVersionHandler) ListCVVersions(c *gin.Context) {
-	cvVersions, err := h.Repo.List(c.Request.Context())
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
+		return
+	}
+
+	cvVersions, err := h.Repo.List(c.Request.Context(), userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -27,12 +32,17 @@ func (h *CVVersionHandler) ListCVVersions(c *gin.Context) {
 }
 
 func (h *CVVersionHandler) GetCVVersion(c *gin.Context) {
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
+		return
+	}
+
 	id, ok := parseID(c)
 	if !ok {
 		return
 	}
 
-	cvVersion, err := h.Repo.GetByID(c.Request.Context(), id)
+	cvVersion, err := h.Repo.GetByID(c.Request.Context(), userID, id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -47,6 +57,11 @@ func (h *CVVersionHandler) GetCVVersion(c *gin.Context) {
 }
 
 func (h *CVVersionHandler) CreateCVVersion(c *gin.Context) {
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
+		return
+	}
+
 	var req models.CreateCVVersionRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -54,7 +69,7 @@ func (h *CVVersionHandler) CreateCVVersion(c *gin.Context) {
 		return
 	}
 
-	cvVersion, err := h.Repo.Create(c.Request.Context(), req)
+	cvVersion, err := h.Repo.Create(c.Request.Context(), userID, req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -64,6 +79,11 @@ func (h *CVVersionHandler) CreateCVVersion(c *gin.Context) {
 }
 
 func (h *CVVersionHandler) UpdateCVVersion(c *gin.Context) {
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
+		return
+	}
+
 	id, ok := parseID(c)
 	if !ok {
 		return
@@ -76,7 +96,7 @@ func (h *CVVersionHandler) UpdateCVVersion(c *gin.Context) {
 		return
 	}
 
-	cvVersion, err := h.Repo.Update(c.Request.Context(), id, req)
+	cvVersion, err := h.Repo.Update(c.Request.Context(), userID, id, req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -91,12 +111,17 @@ func (h *CVVersionHandler) UpdateCVVersion(c *gin.Context) {
 }
 
 func (h *CVVersionHandler) DeleteCVVersion(c *gin.Context) {
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
+		return
+	}
+
 	id, ok := parseID(c)
 	if !ok {
 		return
 	}
 
-	deleted, err := h.Repo.Delete(c.Request.Context(), id)
+	deleted, err := h.Repo.Delete(c.Request.Context(), userID, id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

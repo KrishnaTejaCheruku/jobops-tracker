@@ -11,6 +11,7 @@ import (
 
 func (r *ApplicationRepository) FindDuplicateForImport(
 	ctx context.Context,
+	userID int64,
 	req models.CreateApplicationRequest,
 ) (*models.Application, error) {
 	jobURL := strings.TrimSpace(req.JobURL)
@@ -19,10 +20,11 @@ func (r *ApplicationRepository) FindDuplicateForImport(
 		app, err := scanApplication(r.DB.QueryRow(ctx, `
 			SELECT `+applicationSelectColumns+`
 			FROM applications
-			WHERE LOWER(job_url) = LOWER($1)
+			WHERE user_id = $1
+			  AND LOWER(job_url) = LOWER($2)
 			ORDER BY updated_at DESC, id DESC
 			LIMIT 1
-		`, jobURL))
+		`, userID, jobURL))
 
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
@@ -45,11 +47,12 @@ func (r *ApplicationRepository) FindDuplicateForImport(
 	app, err := scanApplication(r.DB.QueryRow(ctx, `
 		SELECT `+applicationSelectColumns+`
 		FROM applications
-		WHERE LOWER(company_name) = LOWER($1)
-		AND LOWER(job_title) = LOWER($2)
+		WHERE user_id = $1
+		  AND LOWER(company_name) = LOWER($2)
+		  AND LOWER(job_title) = LOWER($3)
 		ORDER BY updated_at DESC, id DESC
 		LIMIT 1
-	`, companyName, jobTitle))
+	`, userID, companyName, jobTitle))
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil

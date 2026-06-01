@@ -16,7 +16,12 @@ func NewDashboardHandler(repo *repository.DashboardRepository) *DashboardHandler
 }
 
 func (h *DashboardHandler) GetAnalytics(c *gin.Context) {
-	analytics, err := h.Repo.GetAnalytics(c.Request.Context())
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
+		return
+	}
+
+	analytics, err := h.Repo.GetAnalytics(c.Request.Context(), userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

@@ -51,12 +51,13 @@ const cvVersionSelectColumns = `
 	updated_at
 `
 
-func (r *CVVersionRepository) List(ctx context.Context) ([]models.CVVersion, error) {
+func (r *CVVersionRepository) List(ctx context.Context, userID int64) ([]models.CVVersion, error) {
 	rows, err := r.DB.Query(ctx, `
 		SELECT `+cvVersionSelectColumns+`
 		FROM cv_versions
+		WHERE user_id = $1
 		ORDER BY created_at DESC
-	`)
+	`, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -76,12 +77,13 @@ func (r *CVVersionRepository) List(ctx context.Context) ([]models.CVVersion, err
 	return cvVersions, rows.Err()
 }
 
-func (r *CVVersionRepository) GetByID(ctx context.Context, id int64) (*models.CVVersion, error) {
+func (r *CVVersionRepository) GetByID(ctx context.Context, userID int64, id int64) (*models.CVVersion, error) {
 	cv, err := scanCVVersion(r.DB.QueryRow(ctx, `
 		SELECT `+cvVersionSelectColumns+`
 		FROM cv_versions
 		WHERE id = $1
-	`, id))
+		  AND user_id = $2
+	`, id, userID))
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -94,16 +96,18 @@ func (r *CVVersionRepository) GetByID(ctx context.Context, id int64) (*models.CV
 	return cv, nil
 }
 
-func (r *CVVersionRepository) Create(ctx context.Context, req models.CreateCVVersionRequest) (*models.CVVersion, error) {
+func (r *CVVersionRepository) Create(ctx context.Context, userID int64, req models.CreateCVVersionRequest) (*models.CVVersion, error) {
 	cv, err := scanCVVersion(r.DB.QueryRow(ctx, `
 		INSERT INTO cv_versions (
+			user_id,
 			name,
 			focus_area,
 			file_path,
 			notes
 		)
-		VALUES ($1, $2, $3, $4)
+		VALUES ($1, $2, $3, $4, $5)
 		RETURNING `+cvVersionSelectColumns,
+		userID,
 		req.Name,
 		req.FocusArea,
 		req.FilePath,
@@ -117,7 +121,7 @@ func (r *CVVersionRepository) Create(ctx context.Context, req models.CreateCVVer
 	return cv, nil
 }
 
-func (r *CVVersionRepository) Update(ctx context.Context, id int64, req models.UpdateCVVersionRequest) (*models.CVVersion, error) {
+func (r *CVVersionRepository) Update(ctx context.Context, userID int64, id int64, req models.UpdateCVVersionRequest) (*models.CVVersion, error) {
 	cv, err := scanCVVersion(r.DB.QueryRow(ctx, `
 		UPDATE cv_versions
 		SET
@@ -127,12 +131,14 @@ func (r *CVVersionRepository) Update(ctx context.Context, id int64, req models.U
 			notes = $4,
 			updated_at = NOW()
 		WHERE id = $5
+		  AND user_id = $6
 		RETURNING `+cvVersionSelectColumns,
 		req.Name,
 		req.FocusArea,
 		req.FilePath,
 		req.Notes,
 		id,
+		userID,
 	))
 
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -146,8 +152,12 @@ func (r *CVVersionRepository) Update(ctx context.Context, id int64, req models.U
 	return cv, nil
 }
 
-func (r *CVVersionRepository) Delete(ctx context.Context, id int64) (bool, error) {
-	result, err := r.DB.Exec(ctx, `DELETE FROM cv_versions WHERE id = $1`, id)
+func (r *CVVersionRepository) Delete(ctx context.Context, userID int64, id int64) (bool, error) {
+	result, err := r.DB.Exec(ctx, `
+		DELETE FROM cv_versions
+		WHERE id = $1
+		  AND user_id = $2
+	`, id, userID)
 	if err != nil {
 		return false, err
 	}

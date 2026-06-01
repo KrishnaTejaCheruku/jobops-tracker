@@ -8,6 +8,7 @@ import (
 	"github.com/KrishnaTejaCheruku/jobops-tracker/apps/backend/internal/config"
 	"github.com/KrishnaTejaCheruku/jobops-tracker/apps/backend/internal/database"
 	"github.com/KrishnaTejaCheruku/jobops-tracker/apps/backend/internal/handlers"
+	"github.com/KrishnaTejaCheruku/jobops-tracker/apps/backend/internal/middleware"
 	"github.com/KrishnaTejaCheruku/jobops-tracker/apps/backend/internal/repository"
 	"github.com/KrishnaTejaCheruku/jobops-tracker/apps/backend/internal/services"
 	"github.com/gin-contrib/cors"
@@ -35,6 +36,7 @@ func main() {
 			"http://localhost:3000",
 			"http://localhost:8080",
 			"http://localhost:8081",
+			"http://localhost",
 			"http://94.130.75.66",
 		},
 		AllowMethods: []string{
@@ -63,6 +65,7 @@ func main() {
 	authRepo := repository.NewAuthRepository(db)
 	otpService := services.NewOTPServiceFromEnv()
 	authHandler := handlers.NewAuthHandler(authRepo, otpService)
+	authMiddleware := middleware.RequireAuth(authRepo, otpService)
 
 	applicationRepo := repository.NewApplicationRepository(db)
 	applicationHandler := handlers.NewApplicationHandler(applicationRepo)
@@ -89,22 +92,25 @@ func main() {
 	router.GET("/auth/me", authHandler.Me)
 	router.POST("/auth/logout", authHandler.Logout)
 
-	router.GET("/applications", applicationHandler.ListApplications)
-	router.POST("/applications", applicationHandler.CreateApplication)
-	router.GET("/applications/export.csv", applicationHandler.ExportApplicationsCSV)
-	router.POST("/applications/import.csv", applicationHandler.ImportApplicationsCSV)
-	router.GET("/applications/:id", applicationHandler.GetApplication)
-	router.PUT("/applications/:id", applicationHandler.UpdateApplication)
-	router.DELETE("/applications/:id", applicationHandler.DeleteApplication)
-	router.GET("/applications/:id/status-history", applicationHandler.GetApplicationStatusHistory)
+	protected := router.Group("/")
+	protected.Use(authMiddleware)
 
-	router.GET("/cv-versions", cvVersionHandler.ListCVVersions)
-	router.POST("/cv-versions", cvVersionHandler.CreateCVVersion)
-	router.GET("/cv-versions/:id", cvVersionHandler.GetCVVersion)
-	router.PUT("/cv-versions/:id", cvVersionHandler.UpdateCVVersion)
-	router.DELETE("/cv-versions/:id", cvVersionHandler.DeleteCVVersion)
+	protected.GET("/applications", applicationHandler.ListApplications)
+	protected.POST("/applications", applicationHandler.CreateApplication)
+	protected.GET("/applications/export.csv", applicationHandler.ExportApplicationsCSV)
+	protected.POST("/applications/import.csv", applicationHandler.ImportApplicationsCSV)
+	protected.GET("/applications/:id", applicationHandler.GetApplication)
+	protected.PUT("/applications/:id", applicationHandler.UpdateApplication)
+	protected.DELETE("/applications/:id", applicationHandler.DeleteApplication)
+	protected.GET("/applications/:id/status-history", applicationHandler.GetApplicationStatusHistory)
 
-	router.GET("/dashboard/analytics", dashboardHandler.GetAnalytics)
+	protected.GET("/cv-versions", cvVersionHandler.ListCVVersions)
+	protected.POST("/cv-versions", cvVersionHandler.CreateCVVersion)
+	protected.GET("/cv-versions/:id", cvVersionHandler.GetCVVersion)
+	protected.PUT("/cv-versions/:id", cvVersionHandler.UpdateCVVersion)
+	protected.DELETE("/cv-versions/:id", cvVersionHandler.DeleteCVVersion)
+
+	protected.GET("/dashboard/analytics", dashboardHandler.GetAnalytics)
 
 	addr := ":" + cfg.ServerPort
 	log.Printf("starting %s API on port %s", cfg.AppName, cfg.ServerPort)

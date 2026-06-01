@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/KrishnaTejaCheruku/jobops-tracker/apps/backend/internal/middleware"
 	"github.com/KrishnaTejaCheruku/jobops-tracker/apps/backend/internal/models"
 	"github.com/KrishnaTejaCheruku/jobops-tracker/apps/backend/internal/repository"
 	"github.com/KrishnaTejaCheruku/jobops-tracker/apps/backend/internal/validation"
@@ -20,6 +21,11 @@ func NewApplicationHandler(repo *repository.ApplicationRepository) *ApplicationH
 }
 
 func (h *ApplicationHandler) ListApplications(c *gin.Context) {
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
+		return
+	}
+
 	filters := models.ApplicationFilters{
 		Search:   strings.TrimSpace(c.Query("search")),
 		Status:   strings.TrimSpace(c.Query("status")),
@@ -43,7 +49,7 @@ func (h *ApplicationHandler) ListApplications(c *gin.Context) {
 		SortOrder: strings.TrimSpace(c.Query("sort_order")),
 	}
 
-	applications, err := h.Repo.ListPaginated(c.Request.Context(), filters, pagination, sort)
+	applications, err := h.Repo.ListPaginated(c.Request.Context(), userID, filters, pagination, sort)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -53,12 +59,17 @@ func (h *ApplicationHandler) ListApplications(c *gin.Context) {
 }
 
 func (h *ApplicationHandler) GetApplication(c *gin.Context) {
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
+		return
+	}
+
 	id, ok := parseID(c)
 	if !ok {
 		return
 	}
 
-	application, err := h.Repo.GetByID(c.Request.Context(), id)
+	application, err := h.Repo.GetByID(c.Request.Context(), userID, id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -73,6 +84,11 @@ func (h *ApplicationHandler) GetApplication(c *gin.Context) {
 }
 
 func (h *ApplicationHandler) CreateApplication(c *gin.Context) {
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
+		return
+	}
+
 	var req models.CreateApplicationRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -93,7 +109,7 @@ func (h *ApplicationHandler) CreateApplication(c *gin.Context) {
 		return
 	}
 
-	application, err := h.Repo.Create(c.Request.Context(), req)
+	application, err := h.Repo.Create(c.Request.Context(), userID, req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -103,6 +119,11 @@ func (h *ApplicationHandler) CreateApplication(c *gin.Context) {
 }
 
 func (h *ApplicationHandler) UpdateApplication(c *gin.Context) {
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
+		return
+	}
+
 	id, ok := parseID(c)
 	if !ok {
 		return
@@ -128,7 +149,7 @@ func (h *ApplicationHandler) UpdateApplication(c *gin.Context) {
 		return
 	}
 
-	application, err := h.Repo.Update(c.Request.Context(), id, req)
+	application, err := h.Repo.Update(c.Request.Context(), userID, id, req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -143,12 +164,17 @@ func (h *ApplicationHandler) UpdateApplication(c *gin.Context) {
 }
 
 func (h *ApplicationHandler) DeleteApplication(c *gin.Context) {
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
+		return
+	}
+
 	id, ok := parseID(c)
 	if !ok {
 		return
 	}
 
-	deleted, err := h.Repo.Delete(c.Request.Context(), id)
+	deleted, err := h.Repo.Delete(c.Request.Context(), userID, id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -163,12 +189,17 @@ func (h *ApplicationHandler) DeleteApplication(c *gin.Context) {
 }
 
 func (h *ApplicationHandler) GetApplicationStatusHistory(c *gin.Context) {
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
+		return
+	}
+
 	id, ok := parseID(c)
 	if !ok {
 		return
 	}
 
-	application, err := h.Repo.GetByID(c.Request.Context(), id)
+	application, err := h.Repo.GetByID(c.Request.Context(), userID, id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -179,13 +210,23 @@ func (h *ApplicationHandler) GetApplicationStatusHistory(c *gin.Context) {
 		return
 	}
 
-	history, err := h.Repo.ListStatusHistory(c.Request.Context(), id)
+	history, err := h.Repo.ListStatusHistory(c.Request.Context(), userID, id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, history)
+}
+
+func requireCurrentUserID(c *gin.Context) (int64, bool) {
+	userID, ok := middleware.CurrentUserID(c)
+	if !ok || userID == 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
+		return 0, false
+	}
+
+	return userID, true
 }
 
 func respondValidationError(c *gin.Context, err error) {
@@ -203,7 +244,7 @@ func respondValidationError(c *gin.Context, err error) {
 func parseID(c *gin.Context) (int64, bool) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid application id"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
 		return 0, false
 	}
 

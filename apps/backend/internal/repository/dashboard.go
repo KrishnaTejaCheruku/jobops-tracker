@@ -16,7 +16,7 @@ func NewDashboardRepository(db *pgxpool.Pool) *DashboardRepository {
 	return &DashboardRepository{DB: db}
 }
 
-func (r *DashboardRepository) GetAnalytics(ctx context.Context) (*models.DashboardAnalytics, error) {
+func (r *DashboardRepository) GetAnalytics(ctx context.Context, userID int64) (*models.DashboardAnalytics, error) {
 	var analytics models.DashboardAnalytics
 
 	err := r.DB.QueryRow(ctx, `
@@ -57,7 +57,8 @@ func (r *DashboardRepository) GetAnalytics(ctx context.Context) (*models.Dashboa
 				AND follow_up_date > CURRENT_DATE
 			) AS upcoming_follow_ups
 		FROM applications
-	`).Scan(
+		WHERE user_id = $1
+	`, userID).Scan(
 		&analytics.TotalApplications,
 		&analytics.ActiveApplications,
 		&analytics.ClosedApplications,
@@ -84,55 +85,60 @@ func (r *DashboardRepository) GetAnalytics(ctx context.Context) (*models.Dashboa
 	analytics.OfferRatePercent = percentage(analytics.Offers, analytics.TotalApplications)
 	analytics.RejectionRatePercent = percentage(analytics.Rejected, analytics.TotalApplications)
 
-	if analytics.ByStatus, err = r.listGroupCounts(ctx, `
+	if analytics.ByStatus, err = r.listGroupCounts(ctx, userID, `
 		SELECT
 			COALESCE(NULLIF(status, ''), 'Unknown') AS name,
 			COUNT(*) AS count
 		FROM applications
+		WHERE user_id = $1
 		GROUP BY 1
 		ORDER BY 2 DESC, 1 ASC
 	`); err != nil {
 		return nil, err
 	}
 
-	if analytics.BySource, err = r.listGroupCounts(ctx, `
+	if analytics.BySource, err = r.listGroupCounts(ctx, userID, `
 		SELECT
 			COALESCE(NULLIF(source, ''), 'Unknown') AS name,
 			COUNT(*) AS count
 		FROM applications
+		WHERE user_id = $1
 		GROUP BY 1
 		ORDER BY 2 DESC, 1 ASC
 	`); err != nil {
 		return nil, err
 	}
 
-	if analytics.ByPriority, err = r.listGroupCounts(ctx, `
+	if analytics.ByPriority, err = r.listGroupCounts(ctx, userID, `
 		SELECT
 			COALESCE(NULLIF(priority, ''), 'Unknown') AS name,
 			COUNT(*) AS count
 		FROM applications
+		WHERE user_id = $1
 		GROUP BY 1
 		ORDER BY 2 DESC, 1 ASC
 	`); err != nil {
 		return nil, err
 	}
 
-	if analytics.ByWorkMode, err = r.listGroupCounts(ctx, `
+	if analytics.ByWorkMode, err = r.listGroupCounts(ctx, userID, `
 		SELECT
 			COALESCE(NULLIF(work_mode, ''), 'Unknown') AS name,
 			COUNT(*) AS count
 		FROM applications
+		WHERE user_id = $1
 		GROUP BY 1
 		ORDER BY 2 DESC, 1 ASC
 	`); err != nil {
 		return nil, err
 	}
 
-	if analytics.ByCVVersion, err = r.listGroupCounts(ctx, `
+	if analytics.ByCVVersion, err = r.listGroupCounts(ctx, userID, `
 		SELECT
 			COALESCE(NULLIF(cv_version, ''), 'Not selected') AS name,
 			COUNT(*) AS count
 		FROM applications
+		WHERE user_id = $1
 		GROUP BY 1
 		ORDER BY 2 DESC, 1 ASC
 	`); err != nil {
@@ -142,8 +148,8 @@ func (r *DashboardRepository) GetAnalytics(ctx context.Context) (*models.Dashboa
 	return &analytics, nil
 }
 
-func (r *DashboardRepository) listGroupCounts(ctx context.Context, query string) ([]models.DashboardGroupCount, error) {
-	rows, err := r.DB.Query(ctx, query)
+func (r *DashboardRepository) listGroupCounts(ctx context.Context, userID int64, query string) ([]models.DashboardGroupCount, error) {
+	rows, err := r.DB.Query(ctx, query, userID)
 	if err != nil {
 		return nil, err
 	}

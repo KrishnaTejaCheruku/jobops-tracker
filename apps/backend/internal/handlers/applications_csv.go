@@ -34,7 +34,12 @@ var applicationCSVHeaders = []string{
 }
 
 func (h *ApplicationHandler) ExportApplicationsCSV(c *gin.Context) {
-	applications, err := h.Repo.List(c.Request.Context(), models.ApplicationFilters{})
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
+		return
+	}
+
+	applications, err := h.Repo.List(c.Request.Context(), userID, models.ApplicationFilters{})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -82,6 +87,11 @@ func (h *ApplicationHandler) ExportApplicationsCSV(c *gin.Context) {
 }
 
 func (h *ApplicationHandler) ImportApplicationsCSV(c *gin.Context) {
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
+		return
+	}
+
 	fileHeader, err := c.FormFile("file")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "csv file is required in form field 'file'"})
@@ -133,7 +143,7 @@ func (h *ApplicationHandler) ImportApplicationsCSV(c *gin.Context) {
 			continue
 		}
 
-		existing, err := h.Repo.FindDuplicateForImport(c.Request.Context(), req)
+		existing, err := h.Repo.FindDuplicateForImport(c.Request.Context(), userID, req)
 		if err != nil {
 			result.Failed++
 			result.Errors = append(result.Errors, fmt.Sprintf("row %d: duplicate lookup failed: %s", actualRowNumber, err.Error()))
@@ -141,7 +151,7 @@ func (h *ApplicationHandler) ImportApplicationsCSV(c *gin.Context) {
 		}
 
 		if existing == nil {
-			if _, err := h.Repo.Create(c.Request.Context(), req); err != nil {
+			if _, err := h.Repo.Create(c.Request.Context(), userID, req); err != nil {
 				result.Failed++
 				result.Errors = append(result.Errors, fmt.Sprintf("row %d: %s", actualRowNumber, err.Error()))
 				continue
@@ -158,6 +168,7 @@ func (h *ApplicationHandler) ImportApplicationsCSV(c *gin.Context) {
 
 		updatedApplication, err := h.Repo.Update(
 			c.Request.Context(),
+			userID,
 			existing.ID,
 			createRequestToUpdateRequest(req),
 		)
