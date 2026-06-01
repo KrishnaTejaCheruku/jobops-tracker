@@ -279,6 +279,8 @@ func applyCSVImportDefaults(req *models.CreateApplicationRequest) {
 	if strings.TrimSpace(req.Priority) == "" {
 		req.Priority = "Medium"
 	}
+
+	defaultAppliedDateToToday(&req.AppliedDate)
 }
 
 func createRequestToUpdateRequest(req models.CreateApplicationRequest) models.UpdateApplicationRequest {

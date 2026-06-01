@@ -19,6 +19,7 @@ export default function ApplicationForm({
   cvVersions,
   isEditing,
   editingId,
+  maxAppliedDate,
   loading,
   fieldErrors,
   onChange,
@@ -171,6 +172,7 @@ export default function ApplicationForm({
               type="date"
               name="applied_date"
               value={form.applied_date}
+              max={maxAppliedDate}
               onChange={onChange}
             />
             <FieldError field="applied_date" fieldErrors={fieldErrors} />

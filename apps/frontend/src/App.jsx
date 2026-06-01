@@ -36,6 +36,37 @@ import {
 
 import { getDateOnly, getFollowUpState } from "./lib/date";
 
+function getTodayDateValue() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function normalizeAppliedDate(value) {
+  const today = getTodayDateValue();
+  const dateValue = String(value || "").trim();
+
+  if (dateValue === "") {
+    return today;
+  }
+
+  if (dateValue > today) {
+    return today;
+  }
+
+  return dateValue;
+}
+
+function buildEmptyApplicationForm() {
+  return {
+    ...EMPTY_APPLICATION_FORM,
+    applied_date: getTodayDateValue(),
+  };
+}
+
 function normalizeApplicationForForm(application) {
   return {
     job_title: application.job_title || "",
@@ -54,13 +85,14 @@ function normalizeApplicationForForm(application) {
     job_description: application.job_description || "",
     priority: application.priority || "Medium",
     notes: application.notes || "",
-    applied_date: application.applied_date || "",
+    applied_date: normalizeAppliedDate(application.applied_date),
   };
 }
 
 function buildApplicationPayload(form) {
   return {
     ...form,
+    applied_date: normalizeAppliedDate(form.applied_date),
     cv_version_id: Number(form.cv_version_id) || 0,
   };
 }
@@ -91,7 +123,7 @@ function getInitialTheme() {
 
 function AppContent() {
   const [theme, setTheme] = useState(getInitialTheme);
-  const [form, setForm] = useState(EMPTY_APPLICATION_FORM);
+  const [form, setForm] = useState(buildEmptyApplicationForm);
   const [fieldErrors, setFieldErrors] = useState({});
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [applications, setApplications] = useState([]);
@@ -265,6 +297,15 @@ function AppContent() {
       return next;
     });
 
+    if (name === "applied_date") {
+      setForm((current) => ({
+        ...current,
+        applied_date: normalizeAppliedDate(value),
+      }));
+
+      return;
+    }
+
     if (name === "cv_version_id") {
       const cvVersionID = Number(value) || 0;
       const selectedCV = cvVersions.find((cv) => cv.id === cvVersionID);
@@ -375,7 +416,7 @@ function AppContent() {
 
   function cancelEdit() {
     setEditingId(null);
-    setForm(EMPTY_APPLICATION_FORM);
+    setForm(buildEmptyApplicationForm());
     setFieldErrors({});
     setMessage("");
     setError("");
@@ -403,7 +444,7 @@ function AppContent() {
         page: 1,
       };
 
-      setForm(EMPTY_APPLICATION_FORM);
+      setForm(buildEmptyApplicationForm());
       setEditingId(null);
       setPagination(firstPage);
       setMessage(isEditing ? "Application updated successfully." : "Application saved successfully.");
@@ -592,6 +633,7 @@ function AppContent() {
           cvVersions={cvVersions}
           isEditing={isEditing}
           editingId={editingId}
+          maxAppliedDate={getTodayDateValue()}
           loading={loading}
           fieldErrors={fieldErrors}
           onChange={handleApplicationChange}

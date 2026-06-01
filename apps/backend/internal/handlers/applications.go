@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/KrishnaTejaCheruku/jobops-tracker/apps/backend/internal/middleware"
 	"github.com/KrishnaTejaCheruku/jobops-tracker/apps/backend/internal/models"
@@ -104,6 +105,8 @@ func (h *ApplicationHandler) CreateApplication(c *gin.Context) {
 		return
 	}
 
+	defaultAppliedDateToToday(&req.AppliedDate)
+
 	if err := validation.ValidateCreateApplication(req); err != nil {
 		respondValidationError(c, err)
 		return
@@ -143,6 +146,8 @@ func (h *ApplicationHandler) UpdateApplication(c *gin.Context) {
 		})
 		return
 	}
+
+	defaultAppliedDateToToday(&req.AppliedDate)
 
 	if err := validation.ValidateUpdateApplication(req); err != nil {
 		respondValidationError(c, err)
@@ -227,6 +232,15 @@ func requireCurrentUserID(c *gin.Context) (int64, bool) {
 	}
 
 	return userID, true
+}
+
+func defaultAppliedDateToToday(appliedDate *string) {
+	if strings.TrimSpace(*appliedDate) == "" {
+		*appliedDate = time.Now().Format("2006-01-02")
+		return
+	}
+
+	*appliedDate = strings.TrimSpace(*appliedDate)
 }
 
 func respondValidationError(c *gin.Context, err error) {

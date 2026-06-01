@@ -160,7 +160,7 @@ func validateApplicationCommonFields(
 	validateURL(validator, "job_url", jobURL)
 	validateEmail(validator, "recruiter_email", recruiterEmail)
 	validateDate(validator, "follow_up_date", followUpDate)
-	validateDate(validator, "applied_date", appliedDate)
+	validateAppliedDate(validator, appliedDate)
 }
 
 func validateURL(validator *applicationValidator, field string, value string) {
@@ -199,6 +199,28 @@ func validateDate(validator *applicationValidator, field string, value string) {
 
 	if _, err := time.Parse("2006-01-02", value); err != nil {
 		validator.add(field, fmt.Sprintf("%s must use YYYY-MM-DD format", field))
+	}
+}
+
+func validateAppliedDate(validator *applicationValidator, value string) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return
+	}
+
+	appliedDate, err := time.Parse("2006-01-02", value)
+	if err != nil {
+		validator.add("applied_date", "applied_date must use YYYY-MM-DD format")
+		return
+	}
+
+	today, err := time.Parse("2006-01-02", time.Now().Format("2006-01-02"))
+	if err != nil {
+		return
+	}
+
+	if appliedDate.After(today) {
+		validator.add("applied_date", "applied_date cannot be in the future")
 	}
 }
 
