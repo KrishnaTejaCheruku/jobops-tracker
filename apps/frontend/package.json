@@ -7,8 +7,8 @@
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "test:e2e": "cypress run",
-    "test:e2e:open": "cypress open"
+    "test:e2e": "NODE_OPTIONS=--no-deprecation cypress run",
+    "test:e2e:open": "NODE_OPTIONS=--no-deprecation cypress open"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^5.0.0",
