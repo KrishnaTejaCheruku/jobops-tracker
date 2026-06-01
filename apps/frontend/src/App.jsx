@@ -633,7 +633,6 @@ function AppContent() {
           cvVersions={cvVersions}
           isEditing={isEditing}
           editingId={editingId}
-          maxAppliedDate={getTodayDateValue()}
           loading={loading}
           fieldErrors={fieldErrors}
           onChange={handleApplicationChange}

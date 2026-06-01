@@ -14,18 +14,28 @@ function FieldError({ field, fieldErrors }) {
   return <span className="field-error">{message}</span>;
 }
 
+function getTodayDateValue() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
 export default function ApplicationForm({
   form,
   cvVersions,
   isEditing,
   editingId,
-  maxAppliedDate,
   loading,
   fieldErrors,
   onChange,
   onSubmit,
   onCancel,
 }) {
+  const today = getTodayDateValue();
+
   return (
     <form className="card form-card" onSubmit={onSubmit}>
       <div className="card-header">
@@ -172,7 +182,7 @@ export default function ApplicationForm({
               type="date"
               name="applied_date"
               value={form.applied_date}
-              max={maxAppliedDate}
+              max={today}
               onChange={onChange}
             />
             <FieldError field="applied_date" fieldErrors={fieldErrors} />
