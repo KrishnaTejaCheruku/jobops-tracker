@@ -22,6 +22,10 @@ func main() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
+	if err := services.ValidateAuthSecretFromEnv(cfg.AppEnv); err != nil {
+		log.Fatalf("auth configuration error: %v", err)
+	}
+
 	db, err := database.WaitForDatabase(cfg.DatabaseURL, 10, 3*time.Second)
 	if err != nil {
 		log.Fatalf("database connection error: %v", err)
@@ -64,7 +68,12 @@ func main() {
 
 	authRepo := repository.NewAuthRepository(db)
 	otpService := services.NewOTPServiceFromEnv()
-	authHandler := handlers.NewAuthHandler(authRepo, otpService)
+	otpDelivery, err := services.NewOTPDeliveryFromEnv(cfg.AppEnv)
+	if err != nil {
+		log.Fatalf("otp delivery configuration error: %v", err)
+	}
+
+	authHandler := handlers.NewAuthHandler(authRepo, otpService, otpDelivery)
 	authMiddleware := middleware.RequireAuth(authRepo, otpService)
 
 	applicationRepo := repository.NewApplicationRepository(db)

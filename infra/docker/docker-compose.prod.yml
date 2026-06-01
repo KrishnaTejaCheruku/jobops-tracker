@@ -36,6 +36,15 @@ services:
       APP_ENV: production
       GIN_MODE: release
       SERVER_PORT: "8000"
+      AUTH_SECRET: ${AUTH_SECRET}
+      AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
+      OTP_DELIVERY_MODE: ${OTP_DELIVERY_MODE:-smtp}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME:-JobOps Tracker}
       DATABASE_URL: postgres://${POSTGRES_USER:-jobops}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-jobops}?sslmode=disable
     depends_on:
       postgres:

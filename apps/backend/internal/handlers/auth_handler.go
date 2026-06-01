@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"log"
 	"net/http"
@@ -11,20 +12,35 @@ import (
 	"time"
 
 	"github.com/KrishnaTejaCheruku/jobops-tracker/apps/backend/internal/models"
-	"github.com/KrishnaTejaCheruku/jobops-tracker/apps/backend/internal/repository"
 	"github.com/KrishnaTejaCheruku/jobops-tracker/apps/backend/internal/services"
 	"github.com/gin-gonic/gin"
 )
 
+type authStore interface {
+	CreateOrGetUser(ctx context.Context, email string) (*models.AuthUser, error)
+	GetUserByEmail(ctx context.Context, email string) (*models.AuthUser, error)
+	CreateOTP(ctx context.Context, userID int64, otpHash string, expiresAt time.Time, maxAttempts int) error
+	GetLatestActiveOTP(ctx context.Context, userID int64) (*models.UserOTP, error)
+	IncrementOTPAttempts(ctx context.Context, otpID int64) error
+	MarkOTPVerified(ctx context.Context, otpID int64) error
+	CreateSession(ctx context.Context, userID int64, tokenHash string, expiresAt time.Time) error
+	GetAuthenticatedSession(ctx context.Context, tokenHash string) (*models.AuthenticatedSession, error)
+	DeleteSession(ctx context.Context, tokenHash string) error
+}
+
 type AuthHandler struct {
-	authRepo     *repository.AuthRepository
+	authRepo     authStore
 	otpService   *services.OTPService
+	otpDelivery  services.OTPDelivery
 	appEnv       string
 	cookieSecure bool
 }
 
-func NewAuthHandler(authRepo *repository.AuthRepository, otpService *services.OTPService) *AuthHandler {
+func NewAuthHandler(authRepo authStore, otpService *services.OTPService, otpDelivery services.OTPDelivery) *AuthHandler {
 	appEnv := strings.ToLower(strings.TrimSpace(os.Getenv("APP_ENV")))
+	if otpDelivery == nil {
+		otpDelivery = services.LogOTPDelivery{}
+	}
 
 	cookieSecure := false
 	if strings.EqualFold(os.Getenv("AUTH_COOKIE_SECURE"), "true") {
@@ -34,6 +50,7 @@ func NewAuthHandler(authRepo *repository.AuthRepository, otpService *services.OT
 	return &AuthHandler{
 		authRepo:     authRepo,
 		otpService:   otpService,
+		otpDelivery:  otpDelivery,
 		appEnv:       appEnv,
 		cookieSecure: cookieSecure,
 	}
@@ -91,7 +108,13 @@ func (h *AuthHandler) RequestOTP(c *gin.Context) {
 		return
 	}
 
-	log.Printf("auth otp generated for %s: %s", email, otp)
+	if err := h.otpDelivery.DeliverOTP(c.Request.Context(), email, otp); err != nil {
+		log.Printf("failed to deliver otp: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "failed to request otp",
+		})
+		return
+	}
 
 	response := models.RequestOTPResponse{
 		Message: "OTP generated successfully.",

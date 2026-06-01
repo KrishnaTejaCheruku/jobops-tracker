@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"math/big"
 	"os"
@@ -33,6 +34,18 @@ func NewOTPServiceFromEnv() *OTPService {
 	return &OTPService{
 		secret: []byte(secret),
 	}
+}
+
+func ValidateAuthSecretFromEnv(appEnv string) error {
+	if !strings.EqualFold(strings.TrimSpace(appEnv), "production") {
+		return nil
+	}
+
+	if strings.TrimSpace(os.Getenv("AUTH_SECRET")) == "" {
+		return errors.New("AUTH_SECRET is required when APP_ENV=production")
+	}
+
+	return nil
 }
 
 func (s *OTPService) GenerateOTP() (string, error) {
