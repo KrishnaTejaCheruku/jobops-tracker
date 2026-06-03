@@ -304,6 +304,9 @@ The project already includes:
 20. Ansible VPS bootstrap/deploy automation
 21. Hetzner VPS live deployment
 22. OpenTofu Hetzner scaffold
+23. Live `jobops.me` and `www.jobops.me` HTTPS domain setup
+24. HTTP-to-HTTPS redirects
+25. HSTS header for live HTTPS responses
 
 ---
 
@@ -973,33 +976,40 @@ Do not switch `AUTH_COOKIE_SECURE=true` until HTTPS is enabled.
 
 ---
 
-## Next Engineering Phase: Domain + HTTPS
+## Completed Engineering Phase: Domain + HTTPS
 
-Later, when domain is purchased:
-
-1. Point DNS A record to:
+Current live domains:
 
 ```text
-94.130.75.66
+https://jobops.me
+https://www.jobops.me
 ```
 
-2. Update `.env.production`:
+Current production environment shape:
 
 ```text
-JOBOPS_SITE_ADDRESS=yourdomain.com
-ACME_EMAIL=your-email
+JOBOPS_SITE_ADDRESS=jobops.me, www.jobops.me
 AUTH_COOKIE_SECURE=true
 ```
 
-3. Use `infra/caddy/Caddyfile.domain.example` as the production Caddyfile shape if you want unknown host headers to return `404`.
+Current behavior:
 
-4. Redeploy Caddy.
+```text
+http://jobops.me redirects to https://jobops.me
+http://www.jobops.me redirects to https://www.jobops.me
+HTTPS responses include Strict-Transport-Security: max-age=31536000; includeSubDomains
+API health passes on both apex and www hosts
+```
 
-5. Verify:
+Verify:
 
 ```bash
-curl -I https://yourdomain.com
-curl https://yourdomain.com/api/health
+curl -I http://jobops.me
+curl -I http://www.jobops.me
+curl -I https://jobops.me
+curl -I https://www.jobops.me
+curl https://jobops.me/api/health
+curl https://www.jobops.me/api/health
 ```
 
 ---

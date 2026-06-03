@@ -6,6 +6,7 @@ Live site:
 
 ```text
 https://jobops.me
+https://www.jobops.me
 ```
 
 It replaces manual Excel-based job tracking with a modern application dashboard for job applications, CV versions, follow-ups, interviews, and job-search analytics.
@@ -51,7 +52,7 @@ The project is also designed as a cloud-native DevOps portfolio project using:
 
 ## Project Status
 
-Production deployment is live at `https://jobops.me` with HTTPS, passwordless OTP authentication, user-scoped application data, CSV import/export, analytics, Docker Compose deployment, Caddy reverse proxy, and PostgreSQL backups.
+Production deployment is live at `https://jobops.me` and `https://www.jobops.me` with HTTPS, HTTP-to-HTTPS redirects, HSTS, passwordless OTP authentication, user-scoped application data, CSV import/export, analytics, Docker Compose deployment, Caddy reverse proxy, and PostgreSQL backups.
 
 ## License
 

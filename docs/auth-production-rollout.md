@@ -41,12 +41,20 @@ Confirm `applications.user_id` and `cv_versions.user_id` exist before allowing t
 
 ## Production Environment
 
-Required backend variables:
+Current production domain variables:
+
+```text
+JOBOPS_SITE_ADDRESS=jobops.me, www.jobops.me
+AUTH_COOKIE_SECURE=true
+HTTP_PORT=80
+HTTPS_PORT=443
+```
+
+Required backend and OTP variables:
 
 ```text
 APP_ENV=production
 AUTH_SECRET=<long random secret>
-AUTH_COOKIE_SECURE=false
 OTP_DELIVERY_MODE=smtp
 SMTP_HOST=<smtp host>
 SMTP_PORT=587
@@ -56,7 +64,7 @@ SMTP_FROM=<sender address>
 SMTP_FROM_NAME=JobOps Tracker
 ```
 
-Keep `AUTH_COOKIE_SECURE=false` until the app is served over HTTPS with a real domain. Change it to `true` after HTTPS is active.
+For temporary IP-only deployments, keep `AUTH_COOKIE_SECURE=false` until HTTPS is active. For the live `jobops.me` deployment, keep `AUTH_COOKIE_SECURE=true`.
 
 If cross-origin production hosting is introduced, configure `CORS_ALLOWED_ORIGINS` after backend support is added. The current backend uses a fixed allowlist.
 
@@ -64,7 +72,7 @@ If cross-origin production hosting is introduced, configure `CORS_ALLOWED_ORIGIN
 
 The active production Caddyfile returns `404` for common sensitive probe paths such as `/.env`, `/.git*`, `/backup*`, `/phpmyadmin*`, and WordPress scanner URLs before requests reach the frontend.
 
-While `JOBOPS_SITE_ADDRESS=:80`, the app intentionally serves the frontend for any host header on port 80. After a real domain is configured, use `infra/caddy/Caddyfile.domain.example` as the Caddyfile shape so unknown hosts return `404` and only `JOBOPS_SITE_ADDRESS` serves the app.
+Production serves both `jobops.me` and `www.jobops.me`. HTTP requests on both hosts redirect to HTTPS. While `JOBOPS_SITE_ADDRESS=:80` in a temporary IP-only deployment, the app intentionally serves the frontend for any host header on port 80. With a real domain, use `infra/caddy/Caddyfile.domain.example` as the Caddyfile shape if unknown hosts should return `404` and only `JOBOPS_SITE_ADDRESS` should serve the app.
 
 The production Caddyfile sends this HSTS header on HTTPS responses:
 
@@ -89,12 +97,26 @@ Do not enable public production login unless SMTP delivery is configured and tes
 After deployment, verify:
 
 ```bash
-curl -i http://94.130.75.66/api/health
+curl -I http://jobops.me
+curl -I http://www.jobops.me
+curl -I https://jobops.me
+curl -I https://www.jobops.me
+curl https://jobops.me/api/health
+curl https://www.jobops.me/api/health
+```
+
+Expected behavior:
+
+```text
+HTTP requests return 308 redirects to HTTPS
+HTTPS requests return 200 responses
+API health returns database ok
+HTTPS responses include strict-transport-security
 ```
 
 Then smoke-test the browser flow:
 
-1. Open the production frontend.
+1. Open `https://jobops.me`.
 2. Request an OTP for a test email address.
 3. Confirm the email arrives and no `debug_otp` is present in the response.
 4. Verify the OTP.
