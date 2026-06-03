@@ -802,62 +802,35 @@ Only add files that actually changed.
 
 ---
 
-## Next Major Phase After Date Fix
+## Completed Production Auth Rollout
 
-After the date fix, move to production readiness for auth deployment.
-
-Do not deploy yet.
-
-First prepare documentation and deployment checks.
-
----
-
-## Production Auth Rollout Checklist
-
-Create or update:
+Production auth rollout documentation is maintained in:
 
 ```text
 docs/auth-production-rollout.md
 ```
 
-The document should include:
+Current production state:
 
-1. Why backend and frontend auth must deploy together.
-2. Pre-deployment backup command.
-3. Required migrations:
-
-   * `006_add_auth_tables.sql`
-   * `007_add_user_ownership.sql`
-4. How to verify migrations on VPS.
-5. Required production environment variables:
-
-   * `APP_ENV=production`
-   * `AUTH_SECRET=<strong secret>`
-   * `AUTH_COOKIE_SECURE=false` until HTTPS/domain exists
-   * later `AUTH_COOKIE_SECURE=true` after HTTPS/domain
-   * `CORS_ALLOWED_ORIGINS` if supported
-6. Current OTP behavior:
-
-   * Dev mode returns `debug_otp`
-   * Production must not expose debug OTP
-   * SMTP delivery is not yet implemented
-7. Risk:
-
-   * If deployed now with `APP_ENV=production` and no SMTP delivery, OTP will be logged server-side but not visible to user.
-8. Recommendation:
-
-   * Do not enable public production login until SMTP OTP delivery is implemented.
-   * Or keep `APP_ENV` non-production temporarily only for demo, but do not treat that as secure production.
+```text
+Backend and frontend auth are deployed together
+Required auth/user ownership migrations are applied
+APP_ENV=production
+AUTH_SECRET is required
+AUTH_COOKIE_SECURE=true
+OTP_DELIVERY_MODE=smtp
+Production responses do not expose debug_otp
+SMTP OTP delivery is configured
+OTP request throttling is enabled
+```
 
 ---
 
-## Next Engineering Phase: SMTP OTP Delivery
+## Completed Engineering Phase: SMTP OTP Delivery
 
-After production rollout docs, implement SMTP-based OTP delivery.
+SMTP-based OTP delivery is implemented.
 
-Do not integrate an external provider SDK first. Keep it simple.
-
-Suggested design:
+Design:
 
 ```text
 OTPDelivery interface
@@ -865,7 +838,7 @@ LogOTPDelivery for local/dev
 SMTPOTPDelivery for production
 ```
 
-Suggested environment variables:
+Environment variables:
 
 ```text
 OTP_DELIVERY_MODE=log|smtp
@@ -877,17 +850,12 @@ SMTP_FROM
 SMTP_FROM_NAME
 ```
 
-Rules:
+Current rules:
 
 ```text
 development -> log OTP and optionally return debug_otp
 production + smtp -> send OTP by email
 production + log -> allowed only if explicitly configured for internal demo, but warn in docs
-```
-
-Backend endpoint behavior:
-
-```text
 APP_ENV=production should not return debug_otp
 ```
 
@@ -936,16 +904,18 @@ Throttled OTP requests do not create or deliver a new OTP
 
 ---
 
-## Next Engineering Phase: Production Deploy
+## Completed Engineering Phase: Production Deploy
 
-Only after:
+Production deployment is live on the Hetzner VPS and fronted by Caddy.
+
+Current deployment checklist:
 
 ```text
-Applied-date guard is complete
-Auth tests pass
-SMTP or acceptable demo OTP behavior is decided
-Migration flow is confirmed
-Production backup is taken
+Take a database backup
+Pull the latest main branch
+Run production deploy script
+Run production health check
+Run production monitor script when needed
 ```
 
 Production deploy steps should include:
@@ -954,7 +924,7 @@ Production deploy steps should include:
 ssh root@94.130.75.66
 cd /opt/jobops-tracker
 ./scripts/prod-backup.sh .env.production
-git pull
+git pull --ff-only
 ./scripts/prod-deploy.sh .env.production
 ./scripts/prod-healthcheck.sh
 ./scripts/prod-monitor.sh .env.production
@@ -963,16 +933,15 @@ git pull
 Verify:
 
 ```bash
-curl http://94.130.75.66/api/health
+curl https://jobops.me/api/health
+curl https://www.jobops.me/api/health
 ```
 
 Browser verify:
 
 ```text
-http://94.130.75.66
+https://jobops.me
 ```
-
-Do not switch `AUTH_COOKIE_SECURE=true` until HTTPS is enabled.
 
 ---
 
@@ -1010,6 +979,45 @@ curl -I https://jobops.me
 curl -I https://www.jobops.me
 curl https://jobops.me/api/health
 curl https://www.jobops.me/api/health
+```
+
+---
+
+## Next Engineering Phase: Monitoring And Observability
+
+Recommended next work:
+
+```text
+Add Prometheus-compatible backend metrics
+Add Docker Compose monitoring profile or documentation
+Add Grafana dashboard JSON
+Add alert rules for API down, database down, and elevated 5xx responses
+Document production monitoring checks
+Keep the first version lightweight and optional
+```
+
+Suggested backend metrics:
+
+```text
+HTTP request count by route/status/method
+HTTP request duration histogram
+Health check status
+Database connectivity status
+OTP request throttling count
+```
+
+Suggested docs:
+
+```text
+docs/monitoring.md
+```
+
+Suggested verification:
+
+```bash
+go -C apps/backend test ./...
+curl http://localhost:8000/metrics
+docker compose -f infra/docker/docker-compose.yml up -d --build backend
 ```
 
 ---
@@ -1058,7 +1066,8 @@ docker compose -f infra/docker/docker-compose.yml ps
 ### Production Health
 
 ```bash
-curl http://94.130.75.66/api/health
+curl https://jobops.me/api/health
+curl https://www.jobops.me/api/health
 ```
 
 ### Production SSH

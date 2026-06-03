@@ -20,39 +20,44 @@ The project is also designed as a cloud-native DevOps portfolio project using:
 - Docker
 - Kubernetes
 - Helm
-- Terraform
+- OpenTofu / Terraform-style IaC
 - Ansible
 - PostgreSQL
 - Go
 - React
 - Caddy
 
-## MVP Features
+## Product Features
 
-- Add job applications
-- Track application status
-- Track company and job title
-- Store job source and URL
-- Track CV version used
-- Add notes
-- View dashboard statistics
-- Run locally with Docker Compose
+- Passwordless OTP authentication
+- Private, user-scoped application data
+- Job application CRUD
+- Application statuses, priorities, sources, locations, and work modes
+- Applied-date validation and follow-up tracking
+- CV version tracking
+- Status history
+- Analytics dashboard
+- CSV import/export
+- Duplicate detection during CSV import
+- Light/dark theme toggle
+- Production HTTPS deployment
 
-## Planned Features
+## Platform Features
 
-- CSV import
-- CV file upload
-- Follow-up reminders
-- Floci S3/SQS integration
-- Kubernetes deployment with Helm
-- Terraform-based infrastructure
-- Ansible VM setup
-- CI/CD pipeline
-- Monitoring with Prometheus, Grafana, and Loki
+- Docker Compose local and production environments
+- Caddy reverse proxy with HTTPS, HTTP-to-HTTPS redirects, HSTS, and probe-path hardening
+- PostgreSQL migrations, backup, restore, and health-check scripts
+- GitHub Actions CI and image publishing
+- Manual VPS deploy workflow
+- Ansible VPS bootstrap/deploy automation
+- Kubernetes manifests and Helm chart
+- OpenTofu Hetzner scaffold
 
 ## Project Status
 
 Production deployment is live at `https://jobops.me` and `https://www.jobops.me` with HTTPS, HTTP-to-HTTPS redirects, HSTS, passwordless OTP authentication, user-scoped application data, CSV import/export, analytics, Docker Compose deployment, Caddy reverse proxy, and PostgreSQL backups.
+
+Next planned phase: production observability with metrics, dashboards, and alerting.
 
 ## License
 
