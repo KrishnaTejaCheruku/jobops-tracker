@@ -11,10 +11,3 @@ scrape_configs:
     static_configs:
       - targets:
           - host.docker.internal:8000
-
-  - job_name: jobops-backend-production
-    metrics_path: /api/metrics
-    scheme: https
-    static_configs:
-      - targets:
-          - jobops.me
