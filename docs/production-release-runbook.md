@@ -2,7 +2,7 @@
 
 This runbook keeps GitHub as the source of truth while making production deploys explicit, reviewable, and easy to roll back.
 
-Current production deploy behavior defaults to pulling code on the VPS and building images locally with `scripts/prod-deploy.sh`. The same script also supports an opt-in pinned-image mode that pulls explicit GHCR image tags.
+Current production runs in pinned-image mode using explicit GHCR tags. The deploy script still supports source-build mode for local production testing or emergency fallback.
 
 ## Source Of Truth
 
@@ -89,7 +89,7 @@ Then confirm the release image workflow passed in GitHub Actions.
 
 ## Production Deploy
 
-The default deploy mode is source build:
+Production should use pinned-image mode:
 
 ```bash
 ssh root@94.130.75.66
@@ -102,10 +102,12 @@ git pull --ff-only origin main
 ./scripts/prod-ops.sh status .env.production
 ```
 
-This mode keeps the existing behavior:
+Production `.env.production` should include:
 
 ```text
-JOBOPS_DEPLOY_MODE=build
+JOBOPS_DEPLOY_MODE=pull
+BACKEND_IMAGE=ghcr.io/krishnatejacheruku/jobops-tracker-backend:v0.6.0
+FRONTEND_IMAGE=ghcr.io/krishnatejacheruku/jobops-tracker-frontend:v0.6.0
 ```
 
 Verify the public site:
@@ -137,18 +139,21 @@ Also smoke-test login in a browser:
 
 ## Rollback
 
-For source-build deploys, prefer rolling back to the previous known-good Git tag or commit.
+For pinned-image deploys, roll back by changing the two image variables back to the previous known-good tag:
+
+```text
+BACKEND_IMAGE=ghcr.io/krishnatejacheruku/jobops-tracker-backend:vPREVIOUS
+FRONTEND_IMAGE=ghcr.io/krishnatejacheruku/jobops-tracker-frontend:vPREVIOUS
+```
+
+Then run:
 
 ```bash
-ssh root@94.130.75.66
-cd /opt/jobops-tracker
-git fetch origin --tags
-git checkout <known-good-tag-or-commit>
 ./scripts/prod-deploy.sh .env.production
 ./scripts/prod-ops.sh status .env.production
 ```
 
-Run the same public health checks after rollback.
+Run the public health checks after every rollback.
 
 Database rollback is separate. If a release included a non-backward-compatible migration, restore from the backup created before deployment:
 
@@ -158,16 +163,14 @@ Database rollback is separate. If a release included a non-backward-compatible m
 
 Do not restore the database unless intentionally replacing production data from a known backup.
 
-## Pinned Image Deploys
+## Source-Build Fallback
 
-Pinned image mode stops building production images on the VPS. GitHub builds and publishes the images, and the VPS pulls an explicit tag.
+Source-build mode is available if pinned image publishing is unavailable and the VPS must build from the checked-out source.
 
-In `.env.production`, set:
+Set:
 
 ```text
-JOBOPS_DEPLOY_MODE=pull
-BACKEND_IMAGE=ghcr.io/krishnatejacheruku/jobops-tracker-backend:vX.Y.Z
-FRONTEND_IMAGE=ghcr.io/krishnatejacheruku/jobops-tracker-frontend:vX.Y.Z
+JOBOPS_DEPLOY_MODE=build
 ```
 
 Then deploy:
@@ -182,20 +185,6 @@ git pull --ff-only origin main
 ./scripts/prod-ops.sh status .env.production
 ```
 
+Do not use source-build mode as the normal production path now that `v0.6.0` pinned images are verified.
+
 The deploy script refuses `:latest` image tags in pinned-image mode unless `ALLOW_LATEST_IMAGE_TAG=yes` is explicitly set. Keep production on immutable version tags.
-
-Pinned-image rollback is changing the two image variables back to the previous known-good tag:
-
-```text
-BACKEND_IMAGE=ghcr.io/krishnatejacheruku/jobops-tracker-backend:vPREVIOUS
-FRONTEND_IMAGE=ghcr.io/krishnatejacheruku/jobops-tracker-frontend:vPREVIOUS
-```
-
-Then run:
-
-```bash
-./scripts/prod-deploy.sh .env.production
-./scripts/prod-ops.sh status .env.production
-```
-
-Run the public health checks after every pinned-image deploy or rollback.

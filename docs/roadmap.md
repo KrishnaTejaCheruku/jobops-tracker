@@ -22,7 +22,7 @@ This roadmap reflects the current production state of JobOps Tracker.
 - GitHub Actions CI and image publishing
 - Manual VPS deploy workflow
 - GitHub hardening and production release runbook
-- Opt-in pinned GHCR image deployment mode
+- Pinned GHCR image production deployment
 - Ansible VPS automation
 - Kubernetes manifests and Helm chart
 - OpenTofu Hetzner scaffold
@@ -51,7 +51,6 @@ This roadmap reflects the current production state of JobOps Tracker.
 - Consider lightweight IP-based OTP request throttling.
 - Decide whether to switch production to the domain-mode Caddyfile with unknown-host `404`.
 - Apply the GitHub branch protection, secret scanning, and read-only deploy key controls from `docs/production-release-runbook.md`.
-- Switch the live VPS environment from `JOBOPS_DEPLOY_MODE=build` to `JOBOPS_DEPLOY_MODE=pull` after a tagged GHCR release is verified.
 
 ## Later
 
