@@ -27,7 +27,7 @@ services:
         max-file: "5"
 
   backend:
-    image: jobops-tracker-backend:${APP_VERSION:-latest}
+    image: ${BACKEND_IMAGE:-jobops-tracker-backend:latest}
     build:
       context: ../../apps/backend
       dockerfile: Dockerfile
@@ -62,7 +62,7 @@ services:
         max-file: "5"
 
   frontend:
-    image: jobops-tracker-frontend:${APP_VERSION:-latest}
+    image: ${FRONTEND_IMAGE:-jobops-tracker-frontend:latest}
     build:
       context: ../../apps/frontend
       dockerfile: Dockerfile.prod

@@ -315,6 +315,7 @@ The project already includes:
 31. Configurable `CORS_ALLOWED_ORIGINS`
 32. `Retry-After` header for OTP request throttling
 33. GitHub hardening and production release/deploy runbook
+34. Opt-in pinned GHCR image deployment mode
 
 ---
 
@@ -551,26 +552,27 @@ Backend should not silently normalize future `applied_date` if field-level valid
 Task name:
 
 ```text
-Switch production deployment design to pinned GHCR image tags
+Prepare live VPS switch to pinned GHCR image tags
 ```
 
 Context:
 
 ```text
 GitHub remains the source of truth.
-docs/production-release-runbook.md documents hardening, deploy keys, release, deploy, rollback, and future pinned-image deploys.
-The current VPS deploy still pulls code and builds images locally with scripts/prod-deploy.sh.
-The next hardening step is to change the deploy path so the VPS pulls explicit GHCR image tags instead of building from source.
+docs/production-release-runbook.md documents hardening, deploy keys, release, deploy, rollback, and pinned-image deploys.
+scripts/prod-deploy.sh supports JOBOPS_DEPLOY_MODE=build and JOBOPS_DEPLOY_MODE=pull.
+The default remains JOBOPS_DEPLOY_MODE=build.
+Pinned-image mode pulls BACKEND_IMAGE and FRONTEND_IMAGE and refuses :latest unless ALLOW_LATEST_IMAGE_TAG=yes.
 ```
 
-Expected local-only implementation work:
+Expected next work:
 
-1. Add environment-driven backend/frontend image references to `infra/docker/docker-compose.prod.yml`.
-2. Add a pinned-image deploy mode or companion deploy script that pulls `ghcr.io/...:vX.Y.Z`.
-3. Keep local source-build production deploy available until the pinned-image path is verified.
-4. Update `docs/production-release-runbook.md` with the exact pinned-image deploy and rollback commands.
-5. Add tests or shell validation where practical.
-6. Do not deploy to production unless explicitly instructed by the user.
+1. Create or verify a tagged GHCR release such as `vX.Y.Z`.
+2. Confirm backend and frontend images exist for that exact tag.
+3. When the user explicitly asks to switch production, update the VPS `.env.production` to `JOBOPS_DEPLOY_MODE=pull`.
+4. Set `BACKEND_IMAGE` and `FRONTEND_IMAGE` to the verified GHCR tag.
+5. Run the production backup, deploy, and health checks from `docs/production-release-runbook.md`.
+6. Do not touch production unless explicitly instructed by the user.
 
 ---
 
@@ -743,13 +745,13 @@ Minimal GitHub Actions permissions
 Read-only deploy key for VPS repository checkout
 Manual tagged release flow
 Production backup, deploy, health check, and rollback flow
-Future pinned GHCR image deployment plan
+Opt-in pinned GHCR image deployment mode
 ```
 
-Next deployment hardening step:
+Current production follow-up:
 
 ```text
-Switch production deploys from pulling latest code and building on the VPS to pulling explicit GHCR image tags.
+Switch the live VPS .env.production from JOBOPS_DEPLOY_MODE=build to JOBOPS_DEPLOY_MODE=pull after a tagged GHCR release is verified.
 ```
 
 Do not implement or run the production switch unless the user explicitly asks for it.

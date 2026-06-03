@@ -2,7 +2,7 @@
 
 This runbook keeps GitHub as the source of truth while making production deploys explicit, reviewable, and easy to roll back.
 
-Current production deploy behavior still pulls code on the VPS and builds images locally with `scripts/prod-deploy.sh`. A later phase should switch production to pulling pinned GHCR image tags.
+Current production deploy behavior defaults to pulling code on the VPS and building images locally with `scripts/prod-deploy.sh`. The same script also supports an opt-in pinned-image mode that pulls explicit GHCR image tags.
 
 ## Source Of Truth
 
@@ -89,7 +89,7 @@ Then confirm the release image workflow passed in GitHub Actions.
 
 ## Production Deploy
 
-Run these commands only when intentionally deploying production:
+The default deploy mode is source build:
 
 ```bash
 ssh root@94.130.75.66
@@ -100,6 +100,12 @@ git pull --ff-only origin main
 ./scripts/prod-backup.sh .env.production
 ./scripts/prod-deploy.sh .env.production
 ./scripts/prod-ops.sh status .env.production
+```
+
+This mode keeps the existing behavior:
+
+```text
+JOBOPS_DEPLOY_MODE=build
 ```
 
 Verify the public site:
@@ -131,7 +137,7 @@ Also smoke-test login in a browser:
 
 ## Rollback
 
-Prefer rolling back to the previous known-good Git tag or commit.
+For source-build deploys, prefer rolling back to the previous known-good Git tag or commit.
 
 ```bash
 ssh root@94.130.75.66
@@ -152,16 +158,44 @@ Database rollback is separate. If a release included a non-backward-compatible m
 
 Do not restore the database unless intentionally replacing production data from a known backup.
 
-## Future Pinned Image Deploys
+## Pinned Image Deploys
 
-The next deployment hardening phase should stop building production images on the VPS.
+Pinned image mode stops building production images on the VPS. GitHub builds and publishes the images, and the VPS pulls an explicit tag.
 
-Target behavior:
+In `.env.production`, set:
 
-- GitHub builds and publishes `ghcr.io/<owner>/jobops-tracker-backend:vX.Y.Z`.
-- GitHub builds and publishes `ghcr.io/<owner>/jobops-tracker-frontend:vX.Y.Z`.
-- The VPS deploy pulls an explicit tag, never `latest`.
-- The deploy command records the tag used for production.
-- Rollback becomes switching back to the previous image tag.
+```text
+JOBOPS_DEPLOY_MODE=pull
+BACKEND_IMAGE=ghcr.io/krishnatejacheruku/jobops-tracker-backend:vX.Y.Z
+FRONTEND_IMAGE=ghcr.io/krishnatejacheruku/jobops-tracker-frontend:vX.Y.Z
+```
 
-This keeps GitHub in place while reducing the amount of source code and build tooling required on the VPS.
+Then deploy:
+
+```bash
+ssh root@94.130.75.66
+cd /opt/jobops-tracker
+git fetch origin --tags
+git pull --ff-only origin main
+./scripts/prod-backup.sh .env.production
+./scripts/prod-deploy.sh .env.production
+./scripts/prod-ops.sh status .env.production
+```
+
+The deploy script refuses `:latest` image tags in pinned-image mode unless `ALLOW_LATEST_IMAGE_TAG=yes` is explicitly set. Keep production on immutable version tags.
+
+Pinned-image rollback is changing the two image variables back to the previous known-good tag:
+
+```text
+BACKEND_IMAGE=ghcr.io/krishnatejacheruku/jobops-tracker-backend:vPREVIOUS
+FRONTEND_IMAGE=ghcr.io/krishnatejacheruku/jobops-tracker-frontend:vPREVIOUS
+```
+
+Then run:
+
+```bash
+./scripts/prod-deploy.sh .env.production
+./scripts/prod-ops.sh status .env.production
+```
+
+Run the public health checks after every pinned-image deploy or rollback.

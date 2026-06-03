@@ -50,6 +50,7 @@ The project is also designed as a cloud-native DevOps portfolio project using:
 - GitHub Actions CI and image publishing
 - Manual VPS deploy workflow
 - GitHub hardening and production release runbook
+- Opt-in pinned GHCR image deployment mode
 - Ansible VPS bootstrap/deploy automation
 - Kubernetes manifests and Helm chart
 - OpenTofu Hetzner scaffold
@@ -64,7 +65,7 @@ Operational docs:
 - [Monitoring guide](docs/monitoring.md)
 - [Backup and restore guide](docs/backup-restore.md)
 
-Next planned deployment hardening phase: switch production deploys from building on the VPS to pulling pinned GHCR image tags.
+Next planned deployment hardening phase: switch the live VPS environment to the pinned GHCR image deployment mode after a tagged release is verified.
 
 ## License
 
