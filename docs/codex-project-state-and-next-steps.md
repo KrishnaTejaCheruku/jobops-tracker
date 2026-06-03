@@ -307,6 +307,8 @@ The project already includes:
 23. Live `jobops.me` and `www.jobops.me` HTTPS domain setup
 24. HTTP-to-HTTPS redirects
 25. HSTS header for live HTTPS responses
+26. Prometheus-compatible backend `/metrics` endpoint
+27. Monitoring guide with scrape and alert examples
 
 ---
 
@@ -983,33 +985,35 @@ curl https://www.jobops.me/api/health
 
 ---
 
-## Next Engineering Phase: Monitoring And Observability
+## Current Engineering Phase: Monitoring And Observability
+
+Completed first slice:
+
+```text
+Backend exposes GET /metrics
+Metrics are Prometheus text format
+HTTP request counters and duration histograms are recorded
+Database connectivity gauge is exposed
+Application uptime gauge is exposed
+docs/monitoring.md documents scrape and alert examples
+```
+
+Current metrics:
+
+```text
+jobops_app_uptime_seconds
+jobops_database_up
+jobops_http_requests_total
+jobops_http_request_duration_seconds
+```
 
 Recommended next work:
 
 ```text
-Add Prometheus-compatible backend metrics
-Add Docker Compose monitoring profile or documentation
+Add Docker Compose monitoring profile or documentation for Prometheus/Grafana
 Add Grafana dashboard JSON
-Add alert rules for API down, database down, and elevated 5xx responses
-Document production monitoring checks
-Keep the first version lightweight and optional
-```
-
-Suggested backend metrics:
-
-```text
-HTTP request count by route/status/method
-HTTP request duration histogram
-Health check status
-Database connectivity status
-OTP request throttling count
-```
-
-Suggested docs:
-
-```text
-docs/monitoring.md
+Add alert-rule file for API down, database down, and elevated 5xx responses
+Keep the monitoring stack lightweight and optional
 ```
 
 Suggested verification:

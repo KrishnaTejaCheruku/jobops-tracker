@@ -24,16 +24,16 @@ This roadmap reflects the current production state of JobOps Tracker.
 - Ansible VPS automation
 - Kubernetes manifests and Helm chart
 - OpenTofu Hetzner scaffold
+- Prometheus-compatible backend `/metrics` endpoint
+- Monitoring guide with scrape and alert examples
 
 ## Next
 
 ### Monitoring And Observability
 
-- Add Prometheus-compatible backend metrics.
-- Add `/metrics` documentation and local verification commands.
 - Add a Grafana dashboard JSON for API, database, and auth health.
-- Add alert-rule examples for API down, database down, and elevated error rates.
-- Document production monitoring checks in `docs/monitoring.md`.
+- Add Docker Compose monitoring profile for Prometheus and Grafana.
+- Add production dashboard import instructions.
 
 ### Maintenance Automation
 

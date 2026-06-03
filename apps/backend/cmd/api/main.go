@@ -9,6 +9,7 @@ import (
 	"github.com/KrishnaTejaCheruku/jobops-tracker/apps/backend/internal/database"
 	"github.com/KrishnaTejaCheruku/jobops-tracker/apps/backend/internal/handlers"
 	"github.com/KrishnaTejaCheruku/jobops-tracker/apps/backend/internal/middleware"
+	"github.com/KrishnaTejaCheruku/jobops-tracker/apps/backend/internal/observability"
 	"github.com/KrishnaTejaCheruku/jobops-tracker/apps/backend/internal/repository"
 	"github.com/KrishnaTejaCheruku/jobops-tracker/apps/backend/internal/services"
 	"github.com/gin-contrib/cors"
@@ -33,6 +34,8 @@ func main() {
 	defer db.Close()
 
 	router := gin.Default()
+	metricsRegistry := observability.NewRegistry()
+	router.Use(metricsRegistry.Middleware())
 
 	router.Use(cors.New(cors.Config{
 		AllowOrigins: []string{
@@ -95,6 +98,7 @@ func main() {
 	})
 
 	router.GET("/health", healthHandler.HealthCheck)
+	router.GET("/metrics", observability.NewMetricsHandler(metricsRegistry, db))
 
 	router.POST("/auth/request-otp", authHandler.RequestOTP)
 	router.POST("/auth/verify-otp", authHandler.VerifyOTP)
