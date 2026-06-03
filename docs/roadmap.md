@@ -26,6 +26,7 @@ This roadmap reflects the current production state of JobOps Tracker.
 - OpenTofu Hetzner scaffold
 - Prometheus-compatible backend `/metrics` endpoint
 - Monitoring guide with scrape and alert examples
+- Dry-run production maintenance script for expired OTPs, expired sessions, and backup retention
 
 ## Next
 
@@ -37,10 +38,8 @@ This roadmap reflects the current production state of JobOps Tracker.
 
 ### Maintenance Automation
 
-- Add cleanup for expired OTP rows.
-- Add cleanup for expired session rows.
-- Add backup retention documentation or script support.
-- Keep maintenance commands explicit and safe by default.
+- Add optional cron/systemd timer documentation for `scripts/prod-maintenance.sh`.
+- Add production runbook examples for monthly maintenance review.
 
 ### Security Hardening
 

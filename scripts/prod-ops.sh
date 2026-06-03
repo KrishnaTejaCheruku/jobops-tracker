@@ -20,6 +20,9 @@ case "$ACTION" in
   restart)
     docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" restart
     ;;
+  maintenance)
+    ./scripts/prod-maintenance.sh "$ENV_FILE"
+    ;;
   stop)
     docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" down
     ;;
@@ -41,6 +44,7 @@ case "$ACTION" in
     echo "  $0 status [env-file]"
     echo "  $0 logs [env-file]"
     echo "  $0 restart [env-file]"
+    echo "  $0 maintenance [env-file]"
     echo "  $0 stop [env-file]"
     echo "  $0 stop-with-volumes [env-file]"
     echo "  $0 pull-build [env-file]"

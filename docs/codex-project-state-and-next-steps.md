@@ -309,6 +309,7 @@ The project already includes:
 25. HSTS header for live HTTPS responses
 26. Prometheus-compatible backend `/metrics` endpoint
 27. Monitoring guide with scrape and alert examples
+28. Dry-run production maintenance script for expired OTPs, expired sessions, and backup retention
 
 ---
 
@@ -1022,6 +1023,40 @@ Suggested verification:
 go -C apps/backend test ./...
 curl http://localhost:8000/metrics
 docker compose -f infra/docker/docker-compose.yml up -d --build backend
+```
+
+---
+
+## Completed Engineering Phase: Maintenance Automation
+
+Current maintenance support:
+
+```text
+scripts/prod-maintenance.sh
+```
+
+Behavior:
+
+```text
+Dry run by default
+Requires CONFIRM_PROD_MAINTENANCE=yes before deleting anything
+Deletes expired OTP rows after OTP_RETENTION_DAYS
+Deletes expired session rows after SESSION_RETENTION_DAYS
+Prunes old backup dump files after BACKUP_RETENTION_DAYS
+Does not delete users, applications, CV versions, or current sessions
+```
+
+Usage:
+
+```bash
+./scripts/prod-maintenance.sh .env.production
+CONFIRM_PROD_MAINTENANCE=yes ./scripts/prod-maintenance.sh .env.production
+```
+
+Documentation:
+
+```text
+docs/backup-restore.md
 ```
 
 ---
