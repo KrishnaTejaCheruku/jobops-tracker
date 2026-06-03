@@ -315,7 +315,7 @@ The project already includes:
 31. Configurable `CORS_ALLOWED_ORIGINS`
 32. `Retry-After` header for OTP request throttling
 33. GitHub hardening and production release/deploy runbook
-34. Opt-in pinned GHCR image deployment mode
+34. Pinned GHCR image production deployment with `v0.6.0`
 
 ---
 
@@ -552,7 +552,7 @@ Backend should not silently normalize future `applied_date` if field-level valid
 Task name:
 
 ```text
-Prepare live VPS switch to pinned GHCR image tags
+Prepare portfolio operations writeup
 ```
 
 Context:
@@ -561,18 +561,17 @@ Context:
 GitHub remains the source of truth.
 docs/production-release-runbook.md documents hardening, deploy keys, release, deploy, rollback, and pinned-image deploys.
 scripts/prod-deploy.sh supports JOBOPS_DEPLOY_MODE=build and JOBOPS_DEPLOY_MODE=pull.
-The default remains JOBOPS_DEPLOY_MODE=build.
+Production is verified on JOBOPS_DEPLOY_MODE=pull with v0.6.0 backend/frontend GHCR images.
 Pinned-image mode pulls BACKEND_IMAGE and FRONTEND_IMAGE and refuses :latest unless ALLOW_LATEST_IMAGE_TAG=yes.
 ```
 
 Expected next work:
 
-1. Create or verify a tagged GHCR release such as `vX.Y.Z`.
-2. Confirm backend and frontend images exist for that exact tag.
-3. When the user explicitly asks to switch production, update the VPS `.env.production` to `JOBOPS_DEPLOY_MODE=pull`.
-4. Set `BACKEND_IMAGE` and `FRONTEND_IMAGE` to the verified GHCR tag.
-5. Run the production backup, deploy, and health checks from `docs/production-release-runbook.md`.
-6. Do not touch production unless explicitly instructed by the user.
+1. Add a concise portfolio operations section or case-study document.
+2. Cover CI, PR protection, release tags, GHCR images, VPS deploy, backups, monitoring, and rollback.
+3. Keep it factual and based on the current verified production state.
+4. Add screenshots later if the user provides them or explicitly asks to capture them.
+5. Do not touch production unless explicitly instructed by the user.
 
 ---
 
@@ -745,16 +744,20 @@ Minimal GitHub Actions permissions
 Read-only deploy key for VPS repository checkout
 Manual tagged release flow
 Production backup, deploy, health check, and rollback flow
-Opt-in pinned GHCR image deployment mode
+Pinned GHCR image production deployment
 ```
 
-Current production follow-up:
+Current production state:
 
 ```text
-Switch the live VPS .env.production from JOBOPS_DEPLOY_MODE=build to JOBOPS_DEPLOY_MODE=pull after a tagged GHCR release is verified.
+JOBOPS_DEPLOY_MODE=pull
+BACKEND_IMAGE=ghcr.io/krishnatejacheruku/jobops-tracker-backend:v0.6.0
+FRONTEND_IMAGE=ghcr.io/krishnatejacheruku/jobops-tracker-frontend:v0.6.0
+HTTPS and API health checks verified on jobops.me and www.jobops.me
+OTP browser smoke test passed
 ```
 
-Do not implement or run the production switch unless the user explicitly asks for it.
+Do not touch production unless the user explicitly asks for it.
 
 ---
 
