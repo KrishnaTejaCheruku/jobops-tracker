@@ -104,6 +104,22 @@ func (r *AuthRepository) CreateOTP(ctx context.Context, userID int64, otpHash st
 	return nil
 }
 
+func (r *AuthRepository) CountRecentOTPs(ctx context.Context, userID int64, since time.Time) (int, error) {
+	query := `
+		SELECT COUNT(*)
+		FROM user_otps
+		WHERE user_id = $1
+		  AND created_at >= $2
+	`
+
+	var count int
+	if err := r.db.QueryRow(ctx, query, userID, since).Scan(&count); err != nil {
+		return 0, fmt.Errorf("count recent otps: %w", err)
+	}
+
+	return count, nil
+}
+
 func (r *AuthRepository) GetLatestActiveOTP(ctx context.Context, userID int64) (*models.UserOTP, error) {
 	query := `
 		SELECT id, user_id, otp_hash, expires_at, verified_at, attempts, max_attempts, created_at

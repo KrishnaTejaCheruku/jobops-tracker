@@ -17,6 +17,8 @@ const (
 	DefaultOTPTTL            = 10 * time.Minute
 	DefaultSessionTTL        = 7 * 24 * time.Hour
 	DefaultOTPMaxAttempts    = 5
+	DefaultOTPRequestLimit   = 5
+	DefaultOTPRequestWindow  = 15 * time.Minute
 	SessionCookieName        = "jobops_session"
 	defaultDevelopmentSecret = "jobops-dev-auth-secret-change-me"
 )

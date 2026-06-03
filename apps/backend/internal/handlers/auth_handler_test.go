@@ -16,9 +16,11 @@ import (
 )
 
 type fakeAuthStore struct {
-	user       *models.AuthUser
-	createErr  error
-	createdOTP string
+	user           *models.AuthUser
+	createErr      error
+	countRecentOTP int
+	countRecentErr error
+	createdOTP     string
 }
 
 func (s *fakeAuthStore) CreateOrGetUser(_ context.Context, email string) (*models.AuthUser, error) {
@@ -40,6 +42,14 @@ func (s *fakeAuthStore) GetUserByEmail(_ context.Context, _ string) (*models.Aut
 func (s *fakeAuthStore) CreateOTP(_ context.Context, _ int64, otpHash string, _ time.Time, _ int) error {
 	s.createdOTP = otpHash
 	return nil
+}
+
+func (s *fakeAuthStore) CountRecentOTPs(_ context.Context, _ int64, _ time.Time) (int, error) {
+	if s.countRecentErr != nil {
+		return 0, s.countRecentErr
+	}
+
+	return s.countRecentOTP, nil
 }
 
 func (s *fakeAuthStore) GetLatestActiveOTP(_ context.Context, _ int64) (*models.UserOTP, error) {
@@ -156,6 +166,56 @@ func TestRequestOTPReturnsErrorWhenDeliveryFails(t *testing.T) {
 
 	if response.Code != http.StatusInternalServerError {
 		t.Fatalf("expected status 500, got %d: %s", response.Code, response.Body.String())
+	}
+}
+
+func TestRequestOTPAllowsRequestBelowRateLimit(t *testing.T) {
+	t.Setenv("APP_ENV", "development")
+	gin.SetMode(gin.TestMode)
+
+	store := &fakeAuthStore{
+		countRecentOTP: services.DefaultOTPRequestLimit - 1,
+	}
+	delivery := &fakeOTPDelivery{}
+	handler := NewAuthHandler(store, services.NewOTPServiceFromEnv(), delivery)
+
+	response := requestOTP(t, handler, "test@example.com")
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d: %s", response.Code, response.Body.String())
+	}
+
+	if store.createdOTP == "" {
+		t.Fatal("expected otp to be stored when request is below rate limit")
+	}
+
+	if delivery.otp == "" {
+		t.Fatal("expected otp to be delivered when request is below rate limit")
+	}
+}
+
+func TestRequestOTPRejectsRequestAtRateLimit(t *testing.T) {
+	t.Setenv("APP_ENV", "development")
+	gin.SetMode(gin.TestMode)
+
+	store := &fakeAuthStore{
+		countRecentOTP: services.DefaultOTPRequestLimit,
+	}
+	delivery := &fakeOTPDelivery{}
+	handler := NewAuthHandler(store, services.NewOTPServiceFromEnv(), delivery)
+
+	response := requestOTP(t, handler, "test@example.com")
+
+	if response.Code != http.StatusTooManyRequests {
+		t.Fatalf("expected status 429, got %d: %s", response.Code, response.Body.String())
+	}
+
+	if store.createdOTP != "" {
+		t.Fatal("expected throttled request not to store otp")
+	}
+
+	if delivery.otp != "" {
+		t.Fatal("expected throttled request not to deliver otp")
 	}
 }
 

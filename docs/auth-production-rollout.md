@@ -66,6 +66,8 @@ Development defaults to `OTP_DELIVERY_MODE=log` and returns `debug_otp` from `PO
 
 Production defaults to `OTP_DELIVERY_MODE=smtp` and does not return `debug_otp`. OTPs are emailed through SMTP. `OTP_DELIVERY_MODE=log` can be used in production only for a controlled internal demo, and it means codes are visible in backend logs rather than emailed.
 
+OTP requests are throttled per user email to 5 requests per 15 minutes. OTP verification remains capped at 5 attempts per code.
+
 Do not enable public production login unless SMTP delivery is configured and tested.
 
 ## Post-Deployment Checks

@@ -334,6 +334,9 @@ Current local behavior:
 ```text
 Development mode returns debug_otp
 Production mode should not expose debug_otp
+SMTP OTP delivery is available for production
+OTP requests are limited to 5 per email per 15 minutes
+OTP verification is limited to 5 attempts per code
 ```
 
 Backend auth files include:
@@ -894,9 +897,9 @@ SMTP delivery can be tested with mocked delivery interface
 
 ---
 
-## Next Engineering Phase: OTP Rate Limiting
+## Completed Engineering Phase: OTP Rate Limiting
 
-Implement after SMTP.
+Implemented after SMTP.
 
 Rate limiting requirements:
 
@@ -917,6 +920,14 @@ Max 5 verification attempts per OTP
 Expired OTP invalid
 Verified OTP invalid
 New OTP invalidates old active OTPs
+```
+
+Current implementation:
+
+```text
+OTP request throttle uses existing user_otps rows
+6th OTP request for the same user email within 15 minutes returns 429
+Throttled OTP requests do not create or deliver a new OTP
 ```
 
 ---
@@ -1063,4 +1074,3 @@ Work in this order:
 6. Do not deploy.
 7. Do not change unrelated architecture.
 8. Do not touch production.
-

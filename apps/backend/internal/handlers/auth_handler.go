@@ -20,6 +20,7 @@ type authStore interface {
 	CreateOrGetUser(ctx context.Context, email string) (*models.AuthUser, error)
 	GetUserByEmail(ctx context.Context, email string) (*models.AuthUser, error)
 	CreateOTP(ctx context.Context, userID int64, otpHash string, expiresAt time.Time, maxAttempts int) error
+	CountRecentOTPs(ctx context.Context, userID int64, since time.Time) (int, error)
 	GetLatestActiveOTP(ctx context.Context, userID int64) (*models.UserOTP, error)
 	IncrementOTPAttempts(ctx context.Context, otpID int64) error
 	MarkOTPVerified(ctx context.Context, otpID int64) error
@@ -78,6 +79,23 @@ func (h *AuthHandler) RequestOTP(c *gin.Context) {
 		log.Printf("failed to create or get user: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "failed to request otp",
+		})
+		return
+	}
+
+	requestWindowStart := time.Now().UTC().Add(-services.DefaultOTPRequestWindow)
+	recentOTPCount, err := h.authRepo.CountRecentOTPs(c.Request.Context(), user.ID, requestWindowStart)
+	if err != nil {
+		log.Printf("failed to count recent otp requests: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "failed to request otp",
+		})
+		return
+	}
+
+	if recentOTPCount >= services.DefaultOTPRequestLimit {
+		c.JSON(http.StatusTooManyRequests, gin.H{
+			"error": "too many otp requests",
 		})
 		return
 	}
