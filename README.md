@@ -2,6 +2,12 @@
 
 JobOps Tracker is an open-source, self-hosted job application tracking platform for DevOps engineers and cloud professionals.
 
+Live site:
+
+```text
+https://jobops.me
+```
+
 It replaces manual Excel-based job tracking with a modern application dashboard for job applications, CV versions, follow-ups, interviews, and job-search analytics.
 
 ## Why this project exists
@@ -16,9 +22,9 @@ The project is also designed as a cloud-native DevOps portfolio project using:
 - Terraform
 - Ansible
 - PostgreSQL
-- FastAPI
+- Go
 - React
-- Local cloud emulation
+- Caddy
 
 ## MVP Features
 
@@ -45,7 +51,7 @@ The project is also designed as a cloud-native DevOps portfolio project using:
 
 ## Project Status
 
-Phase 0: Project foundation and architecture.
+Production deployment is live at `https://jobops.me` with HTTPS, passwordless OTP authentication, user-scoped application data, CSV import/export, analytics, Docker Compose deployment, Caddy reverse proxy, and PostgreSQL backups.
 
 ## License
 

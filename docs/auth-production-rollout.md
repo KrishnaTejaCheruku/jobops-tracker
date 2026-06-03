@@ -66,6 +66,14 @@ The active production Caddyfile returns `404` for common sensitive probe paths s
 
 While `JOBOPS_SITE_ADDRESS=:80`, the app intentionally serves the frontend for any host header on port 80. After a real domain is configured, use `infra/caddy/Caddyfile.domain.example` as the Caddyfile shape so unknown hosts return `404` and only `JOBOPS_SITE_ADDRESS` serves the app.
 
+The production Caddyfile sends this HSTS header on HTTPS responses:
+
+```text
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+```
+
+Do not add the `preload` directive until the domain and all required subdomains have been stable on HTTPS for a sustained period.
+
 ## OTP Behavior
 
 Development defaults to `OTP_DELIVERY_MODE=log` and returns `debug_otp` from `POST /auth/request-otp`.

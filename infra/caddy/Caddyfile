@@ -5,6 +5,10 @@
 {$JOBOPS_SITE_ADDRESS} {
 	encode zstd gzip
 
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+	}
+
 	log {
 		output file /var/log/caddy/access.log {
 			roll_size 10MiB
