@@ -2,6 +2,10 @@
 	email {$ACME_EMAIL}
 }
 
+:80, :443 {
+	respond 404
+}
+
 {$JOBOPS_SITE_ADDRESS} {
 	encode zstd gzip
 

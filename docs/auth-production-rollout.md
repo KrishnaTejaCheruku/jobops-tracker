@@ -60,6 +60,12 @@ Keep `AUTH_COOKIE_SECURE=false` until the app is served over HTTPS with a real d
 
 If cross-origin production hosting is introduced, configure `CORS_ALLOWED_ORIGINS` after backend support is added. The current backend uses a fixed allowlist.
 
+## Caddy Host And Probe Handling
+
+The active production Caddyfile returns `404` for common sensitive probe paths such as `/.env`, `/.git*`, `/backup*`, `/phpmyadmin*`, and WordPress scanner URLs before requests reach the frontend.
+
+While `JOBOPS_SITE_ADDRESS=:80`, the app intentionally serves the frontend for any host header on port 80. After a real domain is configured, use `infra/caddy/Caddyfile.domain.example` as the Caddyfile shape so unknown hosts return `404` and only `JOBOPS_SITE_ADDRESS` serves the app.
+
 ## OTP Behavior
 
 Development defaults to `OTP_DELIVERY_MODE=log` and returns `debug_otp` from `POST /auth/request-otp`.

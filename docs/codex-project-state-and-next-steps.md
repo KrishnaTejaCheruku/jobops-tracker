@@ -285,24 +285,25 @@ The project already includes:
 1. Docker Compose local development
 2. Production Docker Compose
 3. Caddy reverse proxy
-4. VPS-ready deployment scripts
-5. Production backup script
-6. Production restore script
-7. Daily backup cron helper
-8. Production health check script
-9. Production status script
-10. Production monitor script
-11. Docker log rotation
-12. Caddy access logs
-13. Raw Kubernetes manifests
-14. Local 2-node kind Kubernetes cluster validation
-15. Helm chart
-16. GitHub Actions CI
-17. GHCR image publishing
-18. GitHub manual deploy workflow
-19. Ansible VPS bootstrap/deploy automation
-20. Hetzner VPS live deployment
-21. OpenTofu Hetzner scaffold
+4. Caddy probe-path 404 handling for common sensitive/scanner URLs
+5. VPS-ready deployment scripts
+6. Production backup script
+7. Production restore script
+8. Daily backup cron helper
+9. Production health check script
+10. Production status script
+11. Production monitor script
+12. Docker log rotation
+13. Caddy access logs
+14. Raw Kubernetes manifests
+15. Local 2-node kind Kubernetes cluster validation
+16. Helm chart
+17. GitHub Actions CI
+18. GHCR image publishing
+19. GitHub manual deploy workflow
+20. Ansible VPS bootstrap/deploy automation
+21. Hetzner VPS live deployment
+22. OpenTofu Hetzner scaffold
 
 ---
 
@@ -990,9 +991,11 @@ ACME_EMAIL=your-email
 AUTH_COOKIE_SECURE=true
 ```
 
-3. Redeploy Caddy.
+3. Use `infra/caddy/Caddyfile.domain.example` as the production Caddyfile shape if you want unknown host headers to return `404`.
 
-4. Verify:
+4. Redeploy Caddy.
+
+5. Verify:
 
 ```bash
 curl -I https://yourdomain.com
