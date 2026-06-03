@@ -21,6 +21,7 @@ This roadmap reflects the current production state of JobOps Tracker.
 - Live production domains: `https://jobops.me` and `https://www.jobops.me`
 - GitHub Actions CI and image publishing
 - Manual VPS deploy workflow
+- GitHub hardening and production release runbook
 - Ansible VPS automation
 - Kubernetes manifests and Helm chart
 - OpenTofu Hetzner scaffold
@@ -48,9 +49,11 @@ This roadmap reflects the current production state of JobOps Tracker.
 
 - Consider lightweight IP-based OTP request throttling.
 - Decide whether to switch production to the domain-mode Caddyfile with unknown-host `404`.
+- Apply the GitHub branch protection, secret scanning, and read-only deploy key controls from `docs/production-release-runbook.md`.
 
 ## Later
 
+- Switch production deploys from pulling latest code and building on the VPS to pulling pinned GHCR image tags.
 - CV file upload.
 - Follow-up reminders.
 - Public screenshots and architecture diagrams.

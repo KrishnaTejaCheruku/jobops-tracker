@@ -49,6 +49,7 @@ The project is also designed as a cloud-native DevOps portfolio project using:
 - PostgreSQL migrations, backup, restore, and health-check scripts
 - GitHub Actions CI and image publishing
 - Manual VPS deploy workflow
+- GitHub hardening and production release runbook
 - Ansible VPS bootstrap/deploy automation
 - Kubernetes manifests and Helm chart
 - OpenTofu Hetzner scaffold
@@ -57,7 +58,13 @@ The project is also designed as a cloud-native DevOps portfolio project using:
 
 Production deployment is live at `https://jobops.me` and `https://www.jobops.me` with HTTPS, HTTP-to-HTTPS redirects, HSTS, passwordless OTP authentication, user-scoped application data, CSV import/export, analytics, Docker Compose deployment, Caddy reverse proxy, and PostgreSQL backups.
 
-Next planned phase: production observability with metrics, dashboards, and alerting.
+Operational docs:
+
+- [Production release runbook](docs/production-release-runbook.md)
+- [Monitoring guide](docs/monitoring.md)
+- [Backup and restore guide](docs/backup-restore.md)
+
+Next planned deployment hardening phase: switch production deploys from building on the VPS to pulling pinned GHCR image tags.
 
 ## License
 

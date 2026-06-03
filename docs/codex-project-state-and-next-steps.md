@@ -314,6 +314,7 @@ The project already includes:
 30. Grafana dashboard JSON and datasource provisioning
 31. Configurable `CORS_ALLOWED_ORIGINS`
 32. `Retry-After` header for OTP request throttling
+33. GitHub hardening and production release/deploy runbook
 
 ---
 
@@ -550,262 +551,26 @@ Backend should not silently normalize future `applied_date` if field-level valid
 Task name:
 
 ```text
-Verify and finalize applied_date future-date guard
+Switch production deployment design to pinned GHCR image tags
 ```
 
-### Step 1 — Inspect Current Code
-
-Run:
-
-```bash
-grep -R "applied_date cannot be in the future\|max=.*applied\|max={.*today\|applied_date" -n \
-  apps/frontend/src \
-  apps/backend/internal/validation \
-  apps/backend/internal/handlers
-```
-
-Inspect these files:
-
-```bash
-cat apps/frontend/src/components/ApplicationForm.jsx
-cat apps/frontend/src/App.jsx
-cat apps/backend/internal/validation/applications.go
-cat apps/backend/internal/handlers/applications.go
-cat apps/backend/internal/handlers/applications_csv.go
-```
-
-### Step 2 — Frontend Applied Date Guard
-
-Implement or verify:
-
-1. New application form defaults `applied_date` to today.
-2. Resetting form after create/cancel resets `applied_date` to today.
-3. Editing an existing application preserves valid historical `applied_date`.
-4. `ApplicationForm.jsx` date input for `applied_date` uses local today as max:
-
-```jsx
-max={today}
-```
-
-5. Do not restrict `follow_up_date`.
-6. If future date is somehow typed or selected, frontend should prevent submission or normalize before submit.
-
-Preferred helper:
-
-```javascript
-function getTodayDateValue() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
-}
-```
-
-### Step 3 — Backend Applied Date Validation
-
-In backend validation, ensure:
-
-1. `applied_date` is valid date format if provided.
-2. `applied_date` cannot be after today.
-3. Validation error field is:
+Context:
 
 ```text
-applied_date
+GitHub remains the source of truth.
+docs/production-release-runbook.md documents hardening, deploy keys, release, deploy, rollback, and future pinned-image deploys.
+The current VPS deploy still pulls code and builds images locally with scripts/prod-deploy.sh.
+The next hardening step is to change the deploy path so the VPS pulls explicit GHCR image tags instead of building from source.
 ```
 
-4. Validation message is:
+Expected local-only implementation work:
 
-```text
-applied_date cannot be in the future
-```
-
-Create and update paths must both use this validation.
-
-CSV import must use the same create validation so rows with future `applied_date` fail row-level import.
-
-### Step 4 — Backend Tests
-
-If existing validation tests exist, add tests for:
-
-```text
-Create application with future applied_date -> validation error
-Update application with future applied_date -> validation error
-Create application with today applied_date -> valid
-Create application with historical applied_date -> valid
-Follow_up_date future -> valid
-```
-
-Do not create a huge test framework if no test pattern exists, but prefer adding tests to existing validation test files.
-
----
-
-## Verification Commands
-
-### Backend Format and Tests
-
-```bash
-go -C apps/backend fmt ./...
-go -C apps/backend test ./...
-```
-
-### Frontend Build
-
-```bash
-cd apps/frontend
-npm run build
-cd ../..
-```
-
-### Cypress
-
-Run if local stack is available:
-
-```bash
-cd apps/frontend
-npm run cy:run
-cd ../..
-```
-
-### Local Compose
-
-```bash
-docker compose -f infra/docker/docker-compose.yml up -d --build backend frontend
-docker compose -f infra/docker/docker-compose.yml logs --tail=100 backend
-docker compose -f infra/docker/docker-compose.yml ps
-```
-
----
-
-## Manual Auth Smoke Test
-
-Unauthenticated route:
-
-```bash
-curl -i http://localhost:8000/applications
-```
-
-Expected:
-
-```text
-401 Unauthorized
-```
-
-Request OTP:
-
-```bash
-curl -s -X POST http://localhost:8000/auth/request-otp \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com"}'
-```
-
-Use returned `debug_otp`:
-
-```bash
-OTP="PASTE_OTP"
-
-curl -i -c /tmp/jobops-auth-cookies.txt \
-  -X POST http://localhost:8000/auth/verify-otp \
-  -H "Content-Type: application/json" \
-  -d "{\"email\":\"test@example.com\",\"otp\":\"${OTP}\"}"
-```
-
-Authenticated route:
-
-```bash
-curl -i -b /tmp/jobops-auth-cookies.txt http://localhost:8000/applications
-```
-
-Expected:
-
-```text
-200 OK
-```
-
----
-
-## Manual Future Applied Date API Test
-
-Use authenticated cookie:
-
-```bash
-curl -i -b /tmp/jobops-auth-cookies.txt \
-  -X POST http://localhost:8000/applications \
-  -H "Content-Type: application/json" \
-  -d '{
-    "job_title": "Future Date Guard Test",
-    "company_name": "Date Guard GmbH",
-    "source": "LinkedIn",
-    "job_url": "https://example.com/future-date-guard",
-    "location": "Remote",
-    "work_mode": "Remote",
-    "status": "Applied",
-    "priority": "High",
-    "applied_date": "2099-01-01"
-  }'
-```
-
-Expected:
-
-```text
-400 Bad Request
-```
-
-Expected response should include:
-
-```text
-applied_date cannot be in the future
-```
-
----
-
-## Frontend Browser Test for Date Guard
-
-Run local frontend/backend and open:
-
-```text
-http://localhost:5173
-```
-
-Test flow:
-
-1. Login with `test@example.com`.
-2. Use dev OTP.
-3. Dashboard loads.
-4. Open application form.
-5. Confirm `Applied Date` defaults to today.
-6. Try selecting tomorrow.
-7. Expected: tomorrow cannot be selected.
-8. Confirm `Follow Up Date` can still be future.
-9. Create application.
-10. Expected: application is created with valid applied date.
-
----
-
-## Suggested Commit for Date Fix
-
-After tests pass:
-
-```bash
-git status --short
-git diff --stat
-```
-
-Suggested commit:
-
-```bash
-git add apps/frontend/src/App.jsx \
-  apps/frontend/src/components/ApplicationForm.jsx \
-  apps/backend/internal/validation/applications.go \
-  apps/backend/internal/handlers/applications.go \
-  apps/backend/internal/handlers/applications_csv.go
-
-git commit -m "fix: prevent future applied dates"
-git push
-```
-
-Only add files that actually changed.
+1. Add environment-driven backend/frontend image references to `infra/docker/docker-compose.prod.yml`.
+2. Add a pinned-image deploy mode or companion deploy script that pulls `ghcr.io/...:vX.Y.Z`.
+3. Keep local source-build production deploy available until the pinned-image path is verified.
+4. Update `docs/production-release-runbook.md` with the exact pinned-image deploy and rollback commands.
+5. Add tests or shell validation where practical.
+6. Do not deploy to production unless explicitly instructed by the user.
 
 ---
 
@@ -949,6 +714,45 @@ Browser verify:
 ```text
 https://jobops.me
 ```
+
+---
+
+## Completed Engineering Phase: GitHub And Release Hardening
+
+Current release strategy:
+
+```text
+GitHub remains the canonical source repository
+GitHub Actions remains the CI and release image publisher
+The VPS should use read-only repository access
+Production deploys remain manual unless explicitly triggered
+```
+
+Runbook:
+
+```text
+docs/production-release-runbook.md
+```
+
+Documented controls:
+
+```text
+Branch protection on main
+Required CI before merge
+Minimal GitHub Actions permissions
+Read-only deploy key for VPS repository checkout
+Manual tagged release flow
+Production backup, deploy, health check, and rollback flow
+Future pinned GHCR image deployment plan
+```
+
+Next deployment hardening step:
+
+```text
+Switch production deploys from pulling latest code and building on the VPS to pulling explicit GHCR image tags.
+```
+
+Do not implement or run the production switch unless the user explicitly asks for it.
 
 ---
 
