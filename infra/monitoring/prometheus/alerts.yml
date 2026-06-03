@@ -1,0 +1,38 @@
+groups:
+  - name: jobops.rules
+    rules:
+      - alert: JobOpsBackendDown
+        expr: up{job=~"jobops-backend.*"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: JobOps backend metrics scrape is down
+          description: Prometheus cannot scrape {{ $labels.job }} target {{ $labels.instance }}.
+
+      - alert: JobOpsDatabaseDown
+        expr: jobops_database_up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: JobOps database connectivity is down
+          description: The backend reports database connectivity failure.
+
+      - alert: JobOpsElevatedServerErrors
+        expr: sum(rate(jobops_http_requests_total{status=~"5.."}[5m])) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: JobOps backend is returning 5xx responses
+          description: One or more backend routes returned server errors over the last 5 minutes.
+
+      - alert: JobOpsOTPThrottlingActive
+        expr: sum(rate(jobops_http_requests_total{route="/auth/request-otp",status="429"}[15m])) > 0
+        for: 15m
+        labels:
+          severity: info
+        annotations:
+          summary: JobOps OTP request throttling is active
+          description: OTP request throttling has been triggered in the last 15 minutes.

@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: JobOps
+    orgId: 1
+    folder: JobOps
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards

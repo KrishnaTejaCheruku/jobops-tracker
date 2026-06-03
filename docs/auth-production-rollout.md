@@ -55,6 +55,7 @@ Required backend and OTP variables:
 ```text
 APP_ENV=production
 AUTH_SECRET=<long random secret>
+CORS_ALLOWED_ORIGINS=https://jobops.me,https://www.jobops.me
 OTP_DELIVERY_MODE=smtp
 SMTP_HOST=<smtp host>
 SMTP_PORT=587
@@ -66,7 +67,7 @@ SMTP_FROM_NAME=JobOps Tracker
 
 For temporary IP-only deployments, keep `AUTH_COOKIE_SECURE=false` until HTTPS is active. For the live `jobops.me` deployment, keep `AUTH_COOKIE_SECURE=true`.
 
-If cross-origin production hosting is introduced, configure `CORS_ALLOWED_ORIGINS` after backend support is added. The current backend uses a fixed allowlist.
+`CORS_ALLOWED_ORIGINS` is comma-separated. Keep it restricted to the live frontend origins unless another trusted frontend host is introduced.
 
 ## Caddy Host And Probe Handling
 
@@ -88,7 +89,7 @@ Development defaults to `OTP_DELIVERY_MODE=log` and returns `debug_otp` from `PO
 
 Production defaults to `OTP_DELIVERY_MODE=smtp` and does not return `debug_otp`. OTPs are emailed through SMTP. `OTP_DELIVERY_MODE=log` can be used in production only for a controlled internal demo, and it means codes are visible in backend logs rather than emailed.
 
-OTP requests are throttled per user email to 5 requests per 15 minutes. OTP verification remains capped at 5 attempts per code.
+OTP requests are throttled per user email to 5 requests per 15 minutes. Throttled OTP request responses return `429 Too Many Requests` with `Retry-After: 900`. OTP verification remains capped at 5 attempts per code.
 
 Do not enable public production login unless SMTP delivery is configured and tested.
 

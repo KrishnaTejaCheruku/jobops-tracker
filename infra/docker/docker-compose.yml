@@ -27,6 +27,7 @@ services:
       APP_NAME: jobops-tracker
       APP_ENV: development
       BACKEND_PORT: 8000
+      CORS_ALLOWED_ORIGINS: http://localhost:5173,http://localhost:3000,http://localhost:8080,http://localhost:8081,http://localhost
       DATABASE_URL: postgresql://jobops:jobops_dev_password@postgres:5432/jobops
     ports:
       - "8000:8000"

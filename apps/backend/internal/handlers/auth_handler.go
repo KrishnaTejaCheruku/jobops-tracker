@@ -94,6 +94,7 @@ func (h *AuthHandler) RequestOTP(c *gin.Context) {
 	}
 
 	if recentOTPCount >= services.DefaultOTPRequestLimit {
+		c.Header("Retry-After", strconv.Itoa(int(services.DefaultOTPRequestWindow.Seconds())))
 		c.JSON(http.StatusTooManyRequests, gin.H{
 			"error": "too many otp requests",
 		})

@@ -310,6 +310,10 @@ The project already includes:
 26. Prometheus-compatible backend `/metrics` endpoint
 27. Monitoring guide with scrape and alert examples
 28. Dry-run production maintenance script for expired OTPs, expired sessions, and backup retention
+29. Optional Prometheus/Grafana monitoring compose stack
+30. Grafana dashboard JSON and datasource provisioning
+31. Configurable `CORS_ALLOWED_ORIGINS`
+32. `Retry-After` header for OTP request throttling
 
 ---
 
@@ -986,9 +990,9 @@ curl https://www.jobops.me/api/health
 
 ---
 
-## Current Engineering Phase: Monitoring And Observability
+## Completed Engineering Phase: Monitoring And Observability
 
-Completed first slice:
+Completed:
 
 ```text
 Backend exposes GET /metrics
@@ -997,6 +1001,10 @@ HTTP request counters and duration histograms are recorded
 Database connectivity gauge is exposed
 Application uptime gauge is exposed
 docs/monitoring.md documents scrape and alert examples
+infra/monitoring/prometheus/prometheus.yml provides scrape config
+infra/monitoring/prometheus/alerts.yml provides alert examples
+infra/monitoring/docker-compose.monitoring.yml runs optional Prometheus/Grafana stack
+infra/monitoring/grafana/dashboards/jobops-overview.json provides dashboard JSON
 ```
 
 Current metrics:
@@ -1008,13 +1016,11 @@ jobops_http_requests_total
 jobops_http_request_duration_seconds
 ```
 
-Recommended next work:
+Optional later work:
 
 ```text
-Add Docker Compose monitoring profile or documentation for Prometheus/Grafana
-Add Grafana dashboard JSON
-Add alert-rule file for API down, database down, and elevated 5xx responses
-Keep the monitoring stack lightweight and optional
+Add Alertmanager wiring if external alert delivery is needed
+Add production monitoring runbook screenshots after deployment
 ```
 
 Suggested verification:

@@ -38,6 +38,7 @@ services:
       SERVER_PORT: "8000"
       AUTH_SECRET: ${AUTH_SECRET}
       AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://jobops.me,https://www.jobops.me}
       OTP_DELIVERY_MODE: ${OTP_DELIVERY_MODE:-smtp}
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}

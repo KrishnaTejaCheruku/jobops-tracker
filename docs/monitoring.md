@@ -50,6 +50,63 @@ scrape_configs:
           - jobops.me
 ```
 
+## Optional Local Monitoring Stack
+
+Start the app backend first:
+
+```bash
+docker compose -f infra/docker/docker-compose.yml up -d --build backend
+```
+
+Start Prometheus and Grafana:
+
+```bash
+docker compose -f infra/monitoring/docker-compose.monitoring.yml up -d
+```
+
+Open:
+
+```text
+Prometheus: http://localhost:9090
+Grafana: http://localhost:3001
+```
+
+Default local Grafana credentials:
+
+```text
+admin / jobops-admin
+```
+
+Override them with:
+
+```bash
+GRAFANA_ADMIN_USER=admin GRAFANA_ADMIN_PASSWORD=<strong-password> \
+docker compose -f infra/monitoring/docker-compose.monitoring.yml up -d
+```
+
+The JobOps dashboard is provisioned automatically from:
+
+```text
+infra/monitoring/grafana/dashboards/jobops-overview.json
+```
+
+The local Prometheus config scrapes the backend through the host-published port:
+
+```text
+host.docker.internal:8000
+```
+
+## Files
+
+```text
+infra/monitoring/prometheus/prometheus.yml
+infra/monitoring/prometheus/alerts.yml
+infra/monitoring/grafana/provisioning/datasources/prometheus.yml
+infra/monitoring/grafana/provisioning/dashboards/jobops.yml
+infra/monitoring/grafana/dashboards/jobops-overview.json
+infra/monitoring/docker-compose.monitoring.yml
+```
+
 ## Suggested Alerts
 
 API unavailable:
@@ -89,6 +146,8 @@ Run locally with Docker Compose:
 ```bash
 docker compose -f infra/docker/docker-compose.yml up -d --build backend
 curl http://localhost:8000/metrics
+docker compose -f infra/monitoring/docker-compose.monitoring.yml up -d
+curl http://localhost:9090/-/ready
 ```
 
 Production smoke check:

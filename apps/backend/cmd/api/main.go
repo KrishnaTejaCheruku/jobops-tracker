@@ -38,14 +38,7 @@ func main() {
 	router.Use(metricsRegistry.Middleware())
 
 	router.Use(cors.New(cors.Config{
-		AllowOrigins: []string{
-			"http://localhost:5173",
-			"http://localhost:3000",
-			"http://localhost:8080",
-			"http://localhost:8081",
-			"http://localhost",
-			"http://94.130.75.66",
-		},
+		AllowOrigins: cfg.CORSAllowedOrigins,
 		AllowMethods: []string{
 			http.MethodGet,
 			http.MethodPost,

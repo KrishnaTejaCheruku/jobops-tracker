@@ -26,15 +26,18 @@ This roadmap reflects the current production state of JobOps Tracker.
 - OpenTofu Hetzner scaffold
 - Prometheus-compatible backend `/metrics` endpoint
 - Monitoring guide with scrape and alert examples
+- Optional Prometheus/Grafana monitoring compose stack
+- Grafana dashboard JSON and datasource provisioning
 - Dry-run production maintenance script for expired OTPs, expired sessions, and backup retention
+- `Retry-After` response header for OTP request throttling
+- Configurable `CORS_ALLOWED_ORIGINS`
 
 ## Next
 
 ### Monitoring And Observability
 
-- Add a Grafana dashboard JSON for API, database, and auth health.
-- Add Docker Compose monitoring profile for Prometheus and Grafana.
-- Add production dashboard import instructions.
+- Add Alertmanager wiring if external alert delivery is needed.
+- Add production monitoring runbook screenshots after deployment.
 
 ### Maintenance Automation
 
@@ -43,8 +46,6 @@ This roadmap reflects the current production state of JobOps Tracker.
 
 ### Security Hardening
 
-- Add `Retry-After` header for OTP throttle responses.
-- Make CORS allowed origins configurable.
 - Consider lightweight IP-based OTP request throttling.
 - Decide whether to switch production to the domain-mode Caddyfile with unknown-host `404`.
 
@@ -54,4 +55,4 @@ This roadmap reflects the current production state of JobOps Tracker.
 - Follow-up reminders.
 - Public screenshots and architecture diagrams.
 - Portfolio case-study writeup.
-- Optional hosted monitoring stack.
+- Optional hosted monitoring integration.

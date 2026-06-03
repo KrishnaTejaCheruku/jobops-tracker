@@ -210,6 +210,11 @@ func TestRequestOTPRejectsRequestAtRateLimit(t *testing.T) {
 		t.Fatalf("expected status 429, got %d: %s", response.Code, response.Body.String())
 	}
 
+	expectedRetryAfter := "900"
+	if response.Header().Get("Retry-After") != expectedRetryAfter {
+		t.Fatalf("expected Retry-After header %q, got %q", expectedRetryAfter, response.Header().Get("Retry-After"))
+	}
+
 	if store.createdOTP != "" {
 		t.Fatal("expected throttled request not to store otp")
 	}
