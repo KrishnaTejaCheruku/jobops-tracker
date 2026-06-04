@@ -5,6 +5,7 @@ import {
   requestOTP,
   verifyOTP,
 } from "../lib/authApi";
+import jobopsLogo from "../assets/jobops_logo.png";
 import "./AuthGate.css";
 
 export default function AuthGate({ children }) {
@@ -137,7 +138,7 @@ export default function AuthGate({ children }) {
         <section className="auth-layout" aria-label="JobOps Tracker login">
           <div className="auth-product">
             <div className="auth-brand">
-              <div className="auth-logo">JO</div>
+              <img className="auth-logo-image" src={jobopsLogo} alt="JobOps" />
               <div>
                 <h1>JobOps Tracker</h1>
                 <p>Track applications without spreadsheet chaos.</p>
@@ -146,55 +147,41 @@ export default function AuthGate({ children }) {
 
             <div className="auth-product-copy">
               <p className="auth-kicker">Private career pipeline</p>
-              <h2>One place for roles, CV versions, recruiters, and follow-ups.</h2>
+              <h2>Run your job search like an operating system.</h2>
               <p>
-                Keep your job search operational: know what moved, what needs a follow-up,
-                and which CV version went to each company.
+                Keep every role, recruiter conversation, follow-up, and CV version in one
+                focused workspace built for repeated daily use.
               </p>
             </div>
 
-            <div className="auth-preview" aria-hidden="true">
-              <div className="auth-preview-header">
-                <span>Pipeline snapshot</span>
-                <strong>Today</strong>
-              </div>
-
-              <div className="auth-preview-grid">
+            <div className="auth-workflow" aria-label="JobOps workflow">
+              <div className="auth-workflow-item">
+                <span>01</span>
                 <div>
-                  <span>Active</span>
-                  <strong>12</strong>
-                </div>
-                <div>
-                  <span>Interviews</span>
-                  <strong>3</strong>
-                </div>
-                <div>
-                  <span>Follow-ups</span>
-                  <strong>4</strong>
+                  <strong>Capture the role</strong>
+                  <p>Company, recruiter, source, salary range, notes, and job link.</p>
                 </div>
               </div>
 
-              <div className="auth-preview-list">
+              <div className="auth-workflow-item">
+                <span>02</span>
                 <div>
-                  <span className="auth-dot auth-dot-blue" />
-                  <p>Technical interview</p>
-                  <strong>Wed</strong>
+                  <strong>Attach the right CV</strong>
+                  <p>Know exactly which CV version was sent to each company.</p>
                 </div>
+              </div>
+
+              <div className="auth-workflow-item">
+                <span>03</span>
                 <div>
-                  <span className="auth-dot auth-dot-green" />
-                  <p>Recruiter reply due</p>
-                  <strong>Today</strong>
-                </div>
-                <div>
-                  <span className="auth-dot auth-dot-amber" />
-                  <p>CV v4 sent</p>
-                  <strong>Saved</strong>
+                  <strong>Follow up on time</strong>
+                  <p>See overdue, due today, and upcoming actions before they slip.</p>
                 </div>
               </div>
             </div>
 
             <div className="auth-trust-row">
-              <span>OTP secured</span>
+              <span>Passwordless OTP</span>
               <span>User-scoped data</span>
               <span>HTTPS ready</span>
             </div>

@@ -575,22 +575,30 @@ function AppContent() {
   return (
     <main className="app-shell">
       <section className="hero hero-simple">
-        <div>
+        <div className="hero-copy">
           <p className="eyebrow">Open-source job application tracker</p>
           <h1>JobOps Tracker</h1>
           <p className="subtitle">
-            Track job applications, CV versions, follow-ups, recruiters, and pipeline status without Excel.
+            A focused workspace for applications, CV versions, recruiter notes, follow-ups,
+            and pipeline status.
           </p>
+
+          <div className="hero-meta" aria-label="JobOps workspace coverage">
+            <span>Applications</span>
+            <span>CV versions</span>
+            <span>Follow-ups</span>
+            <span>Analytics</span>
+          </div>
         </div>
 
         <ThemeToggle theme={theme} onToggle={toggleTheme} />
       </section>
 
       <section className="summary-grid">
-        <SummaryCard label="Page Applications" value={summary.total} />
-        <SummaryCard label="Applied On Page" value={summary.applied} tone="blue" />
-        <SummaryCard label="Interviews On Page" value={summary.interviews} tone="purple" />
-        <SummaryCard label="High Priority On Page" value={summary.highPriority} tone="red" />
+        <SummaryCard label="Visible Applications" value={summary.total} />
+        <SummaryCard label="Applied" value={summary.applied} tone="blue" />
+        <SummaryCard label="Interview Stage" value={summary.interviews} tone="purple" />
+        <SummaryCard label="High Priority" value={summary.highPriority} tone="red" />
       </section>
 
       <section className="summary-grid secondary-summary-grid">
