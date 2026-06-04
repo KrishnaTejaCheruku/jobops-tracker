@@ -176,7 +176,21 @@ export default function ApplicationsTable({
             {applications.length === 0 && (
               <tr>
                 <td colSpan="8" className="empty">
-                  No applications match the current filters.
+                  <div className="empty-state">
+                    <div className="empty-state-icon" aria-hidden="true">
+                      JO
+                    </div>
+                    <h3>No applications in this view</h3>
+                    <p>
+                      Add your first role from the form, import a CSV, or clear filters
+                      if you expected existing applications here.
+                    </p>
+                    <div className="empty-state-steps">
+                      <span>Save role details</span>
+                      <span>Attach CV version</span>
+                      <span>Schedule follow-up</span>
+                    </div>
+                  </div>
                 </td>
               </tr>
             )}
