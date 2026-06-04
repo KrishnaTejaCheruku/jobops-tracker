@@ -21,8 +21,8 @@
 
   --shadow-sm: 0 8px 24px rgba(15, 23, 42, 0.06);
   --shadow-md: 0 18px 50px rgba(15, 23, 42, 0.09);
-  --radius-md: 16px;
-  --radius-lg: 24px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
 }
 
 * {
@@ -32,9 +32,10 @@
 body {
   margin: 0;
   min-width: 360px;
+  overflow-x: hidden;
   background:
-    radial-gradient(circle at top left, rgba(37, 99, 235, 0.12), transparent 34rem),
-    radial-gradient(circle at top right, rgba(124, 58, 237, 0.1), transparent 30rem),
+    linear-gradient(180deg, rgba(37, 99, 235, 0.06), transparent 22rem),
+    radial-gradient(circle at top right, rgba(16, 185, 129, 0.08), transparent 30rem),
     var(--bg);
   color: var(--text);
   font-family:
@@ -53,21 +54,25 @@ a:hover {
 }
 
 .app-shell {
-  width: min(1520px, calc(100% - 40px));
+  width: min(1440px, calc(100% - 48px));
   margin: 0 auto;
-  padding: 36px 0 56px;
+  padding: 28px 0 52px;
 }
 
 .hero {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 24px;
-  align-items: stretch;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: start;
   margin-bottom: 28px;
 }
 
 .hero-simple {
-  max-width: 920px;
+  max-width: none;
+}
+
+.hero-copy {
+  min-width: 0;
 }
 
 .eyebrow,
@@ -89,15 +94,15 @@ p {
 
 h1 {
   margin-bottom: 12px;
-  font-size: clamp(40px, 5vw, 68px);
-  line-height: 0.98;
-  letter-spacing: -0.05em;
+  font-size: clamp(34px, 4vw, 54px);
+  line-height: 1;
+  letter-spacing: 0;
 }
 
 h2 {
   margin-bottom: 0;
   font-size: 22px;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 h3 {
@@ -111,30 +116,47 @@ h3 {
 .subtitle {
   max-width: 760px;
   color: var(--muted);
-  font-size: 18px;
-  line-height: 1.6;
+  font-size: 17px;
+  line-height: 1.55;
+}
+
+.hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.hero-meta span {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.76);
+  color: #475467;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 850;
 }
 
 .summary-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(160px, 1fr));
-  gap: 16px;
-  margin-bottom: 16px;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
 .secondary-summary-grid {
-  margin-bottom: 24px;
+  margin-bottom: 22px;
 }
 
 .summary-card {
   position: relative;
   overflow: hidden;
-  padding: 22px;
+  min-height: 118px;
+  padding: 18px;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  background: rgba(255, 255, 255, 0.86);
+  background: rgba(255, 255, 255, 0.9);
   box-shadow: var(--shadow-sm);
-  backdrop-filter: blur(12px);
 }
 
 .summary-card::after {
@@ -157,8 +179,8 @@ h3 {
 }
 
 .summary-card strong {
-  font-size: 38px;
-  letter-spacing: -0.04em;
+  font-size: 34px;
+  letter-spacing: 0;
 }
 
 .summary-card-blue::after {
@@ -184,9 +206,8 @@ h3 {
 .card {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.94);
   box-shadow: var(--shadow-sm);
-  backdrop-filter: blur(12px);
 }
 
 .card-header {
@@ -194,7 +215,7 @@ h3 {
   justify-content: space-between;
   gap: 18px;
   align-items: flex-start;
-  padding: 24px 24px 0;
+  padding: 22px 22px 0;
 }
 
 .muted {
@@ -225,8 +246,8 @@ h3 {
 }
 
 .analytics-card {
-  margin-bottom: 24px;
-  padding-bottom: 24px;
+  margin-bottom: 22px;
+  padding-bottom: 22px;
 }
 
 .analytics-metrics {
@@ -239,7 +260,7 @@ h3 {
 .analytics-metric {
   padding: 16px;
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: 10px;
   background: var(--card-soft);
 }
 
@@ -257,7 +278,7 @@ h3 {
   display: block;
   margin-bottom: 6px;
   font-size: 28px;
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
 }
 
 .analytics-metric p {
@@ -287,7 +308,7 @@ h3 {
 .analytics-group {
   padding: 16px;
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: 10px;
   background: white;
 }
 
@@ -346,8 +367,8 @@ h3 {
 
 .workspace {
   display: grid;
-  grid-template-columns: 520px minmax(0, 1fr);
-  gap: 24px;
+  grid-template-columns: 500px minmax(0, 1fr);
+  gap: 22px;
   align-items: start;
 }
 
@@ -392,7 +413,7 @@ textarea {
   width: 100%;
   min-height: 44px;
   border: 1px solid var(--border-strong);
-  border-radius: 14px;
+  border-radius: 8px;
   padding: 11px 12px;
   background: white;
   color: var(--text);
@@ -418,7 +439,7 @@ textarea {
 
 .btn {
   border: 0;
-  border-radius: 14px;
+  border-radius: 8px;
   padding: 11px 16px;
   font: inherit;
   font-size: 14px;
@@ -459,7 +480,7 @@ textarea {
 .btn-small {
   padding: 8px 10px;
   font-size: 12px;
-  border-radius: 11px;
+  border-radius: 8px;
 }
 
 .btn-full {
@@ -471,7 +492,7 @@ textarea {
   margin: 16px 0 0;
   padding: 12px 14px;
   border: 1px solid #bfdbfe;
-  border-radius: 14px;
+  border-radius: 8px;
   background: var(--blue-soft);
   color: #1d4ed8;
   font-weight: 850;
@@ -489,7 +510,7 @@ textarea {
   margin: 20px 24px 0;
   padding: 16px;
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: 10px;
   background: var(--card-soft);
 }
 
@@ -516,7 +537,7 @@ table {
 
 th,
 td {
-  padding: 14px 12px;
+  padding: 12px;
   border-bottom: 1px solid var(--border);
   text-align: left;
   vertical-align: top;
@@ -619,7 +640,7 @@ td small {
   height: 48px;
   display: grid;
   place-items: center;
-  border-radius: 16px;
+  border-radius: 8px;
   background: var(--blue-soft);
   color: var(--blue);
   font-size: 13px;
@@ -663,8 +684,8 @@ td small {
 
 .cv-card,
 .followup-card {
-  margin-bottom: 24px;
-  padding-bottom: 24px;
+  margin-bottom: 22px;
+  padding-bottom: 22px;
 }
 
 .cv-version-form {
@@ -692,7 +713,7 @@ td small {
   align-items: center;
   padding: 16px;
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: 10px;
   background: var(--card-soft);
 }
 
@@ -769,7 +790,7 @@ td small {
   width: min(760px, 100%);
   max-height: 82vh;
   overflow: auto;
-  border-radius: 28px;
+  border-radius: 12px;
   background: white;
   padding-bottom: 24px;
   box-shadow: 0 24px 80px rgba(15, 23, 42, 0.35);
@@ -805,8 +826,16 @@ td small {
 
 @media (max-width: 720px) {
   .app-shell {
-    width: min(100% - 28px, 1520px);
+    width: min(100% - 24px, 1440px);
     padding-top: 24px;
+  }
+
+  .hero {
+    grid-template-columns: 1fr;
+  }
+
+  .theme-toggle {
+    justify-self: start;
   }
 
   .summary-grid,
@@ -957,7 +986,7 @@ td small {
   width: min(980px, 100%);
   max-height: 86vh;
   overflow: auto;
-  border-radius: 28px;
+  border-radius: 12px;
   background: white;
   box-shadow: 0 24px 80px rgba(15, 23, 42, 0.35);
 }
@@ -1145,6 +1174,11 @@ textarea,
 
 html[data-theme="dark"] .theme-toggle {
   background: rgba(17, 24, 39, 0.88);
+}
+
+html[data-theme="dark"] .hero-meta span {
+  background: rgba(17, 24, 39, 0.72);
+  color: var(--muted);
 }
 
 html[data-theme="dark"] .card,
