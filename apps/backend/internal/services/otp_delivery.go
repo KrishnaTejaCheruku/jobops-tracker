@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/mail"
 	"net/smtp"
 	"os"
 	"strconv"
@@ -85,6 +86,18 @@ func (d *SMTPOTPDelivery) DeliverOTP(_ context.Context, email string, otp string
 	if to == "" {
 		return errors.New("otp recipient email is required")
 	}
+	if containsMailHeaderInjectionChars(to) {
+		return errors.New("otp recipient email contains invalid characters")
+	}
+	if containsMailHeaderInjectionChars(d.From) || containsMailHeaderInjectionChars(d.FromName) {
+		return errors.New("smtp sender configuration contains invalid characters")
+	}
+
+	parsedTo, err := mail.ParseAddress(to)
+	if err != nil || strings.TrimSpace(parsedTo.Address) == "" {
+		return errors.New("otp recipient email must be valid")
+	}
+	to = strings.TrimSpace(parsedTo.Address)
 
 	addr := fmt.Sprintf("%s:%d", d.Host, d.Port)
 	var auth smtp.Auth
@@ -97,6 +110,10 @@ func (d *SMTPOTPDelivery) DeliverOTP(_ context.Context, email string, otp string
 	}
 
 	return nil
+}
+
+func containsMailHeaderInjectionChars(value string) bool {
+	return strings.ContainsAny(value, "\r\n")
 }
 
 func (d *SMTPOTPDelivery) message(to string, otp string) []byte {
