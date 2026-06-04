@@ -89,7 +89,7 @@ describe("application management", () => {
     cy.visit("/");
     cy.wait(["@currentUser", "@applications", "@cvVersions", "@analytics"]);
 
-    cy.contains("No applications match the current filters.").should("be.visible");
+    cy.contains("No applications in this view").should("be.visible");
 
     cy.get('input[name="job_title"]').type("Site Reliability Engineer");
     cy.get('input[name="company_name"]').type("Reliability Labs");
@@ -123,7 +123,7 @@ describe("application management", () => {
     cy.wait(["@applications", "@analytics"]);
 
     cy.contains("Application deleted.").should("be.visible");
-    cy.contains("No applications match the current filters.").should("be.visible");
+    cy.contains("No applications in this view").should("be.visible");
     cy.contains("Site Reliability Engineer").should("not.exist");
   });
 });

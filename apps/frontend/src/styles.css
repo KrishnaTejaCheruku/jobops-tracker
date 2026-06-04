@@ -605,6 +605,62 @@ td small {
   padding: 32px;
 }
 
+.empty-state {
+  width: min(100%, 560px);
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  margin: 0 auto;
+  padding: 10px 0 6px;
+}
+
+.empty-state-icon {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  background: var(--blue-soft);
+  color: var(--blue);
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.empty-state h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: 18px;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  text-transform: none;
+}
+
+.empty-state p {
+  max-width: 460px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.55;
+}
+
+.empty-state-steps {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.empty-state-steps span {
+  border-radius: 999px;
+  background: var(--card-soft);
+  color: #475467;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 850;
+}
+
 .cv-card,
 .followup-card {
   margin-bottom: 24px;
@@ -796,6 +852,14 @@ td small {
   .card-header {
     padding-left: 16px;
     padding-right: 16px;
+  }
+
+  .empty {
+    padding: 24px 16px;
+  }
+
+  .empty-state {
+    align-items: center;
   }
 }
 
