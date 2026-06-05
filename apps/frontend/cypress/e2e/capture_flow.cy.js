@@ -97,21 +97,12 @@ describe("job capture flow", () => {
     cy.wait(["@currentUser", "@applications", "@cvVersions", "@analytics"]);
 
     cy.contains("Capture payload could not be read.").should("be.visible");
-    cy.contains("button", "Browser Capture").should("have.class", "btn-capture");
+    cy.contains("button", "Capture Job").should("have.class", "btn-capture");
 
     cy.get(".capture-panel").within(() => {
-      cy.contains("h3", "Browser capture").should("be.visible");
+      cy.contains("h3", "Browser extension").should("be.visible");
+      cy.contains("Extension capture coming soon").should("be.visible");
 
-      cy.get("a.capture-bookmarklet-button").should("not.exist");
-
-      cy.get("textarea.capture-bookmarklet-code")
-        .should("be.visible")
-        .invoke("val")
-        .should("match", /^javascript:/);
-
-      cy.contains("button.capture-bookmarklet-button", "Copy bookmarklet")
-        .should("be.visible")
-        .and("have.class", "btn-primary");
     });
 
     cy.get('input[type="url"]').type("https://company.example/jobs/platform");
