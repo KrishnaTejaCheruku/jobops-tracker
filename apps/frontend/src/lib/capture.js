@@ -405,7 +405,14 @@ function jobOpsCaptureBookmarkletRunner() {
   };
 
   const structuredData = readJSONLDJobPosting();
-  const siteData = hostname.includes("linkedin.com") ? readLinkedInJob() : {};
+  const isLinkedInHost = (host) => {
+    const normalizedHost = String(host || "").toLowerCase();
+    return (
+      normalizedHost === "linkedin.com" ||
+      normalizedHost.endsWith(".linkedin.com")
+    );
+  };
+  const siteData = isLinkedInHost(hostname) ? readLinkedInJob() : {};
 
   const fallbackTitle =
     readMeta("og:title") || readFirstText(["h1"]) || cleanText(document.title);
@@ -415,9 +422,7 @@ function jobOpsCaptureBookmarkletRunner() {
     company_name:
       siteData.company_name ||
       structuredData.company_name ||
-      (hostname.includes("linkedin.com")
-        ? ""
-        : readMeta("og:site_name") || hostname),
+      (isLinkedInHost(hostname) ? "" : readMeta("og:site_name") || hostname),
     source: hostname,
     job_url: location.href,
     location: siteData.location || structuredData.location || "",
