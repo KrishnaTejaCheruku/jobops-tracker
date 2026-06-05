@@ -15,7 +15,6 @@ import StatusHistoryModal from "./components/StatusHistoryModal";
 import ThemeToggle from "./components/ThemeToggle";
 
 import {
-  APP_BASE_URL,
   CLOSED_STATUSES,
   EMPTY_APPLICATION_FORM,
   EMPTY_CV_VERSION_FORM,
@@ -38,7 +37,6 @@ import {
 
 import { getDateOnly, getFollowUpState } from "./lib/date";
 import {
-  buildBookmarklet,
   buildManualCapturePayload,
   parseCaptureFromLocation,
 } from "./lib/capture";
@@ -434,10 +432,8 @@ function AppContent({ user, onLogout, isLoggingOut }) {
   const [captureLoading, setCaptureLoading] = useState(false);
   const [capturePanelOpen, setCapturePanelOpen] = useState(false);
   const [manualCaptureURL, setManualCaptureURL] = useState("");
-  const [bookmarkletCopied, setBookmarkletCopied] = useState(false);
 
   const isEditing = editingId !== null;
-  const bookmarkletHref = useMemo(() => buildBookmarklet(APP_BASE_URL), []);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -731,18 +727,6 @@ function AppContent({ user, onLogout, isLoggingOut }) {
   function closeCapturePanel() {
     setCapturePanelOpen(false);
     setManualCaptureURL("");
-    setBookmarkletCopied(false);
-  }
-
-  async function copyBookmarklet() {
-    setCaptureError("");
-
-    try {
-      await navigator.clipboard.writeText(bookmarkletHref);
-      setBookmarkletCopied(true);
-    } catch {
-      setCaptureError("Could not copy bookmarklet. Select and copy the code manually.");
-    }
   }
 
   function openManualCapture(event) {
@@ -963,7 +947,7 @@ function AppContent({ user, onLogout, isLoggingOut }) {
 
           <div className="dashboard-top-actions">
             <button type="button" className="btn btn-capture" onClick={openCapturePanel}>
-              Browser Capture
+              Capture Job
             </button>
             <button
               type="button"
@@ -1133,8 +1117,8 @@ function AppContent({ user, onLogout, isLoggingOut }) {
                 <p className="section-kicker">Capture job</p>
                 <h2>Add a role from another page</h2>
                 <p className="muted">
-                  Start with a URL, import CSV data, or install the browser capture
-                  bookmarklet.
+                  Start with a URL, import CSV data, or prepare for the upcoming
+                  browser extension capture flow.
                 </p>
               </div>
 
@@ -1174,27 +1158,15 @@ function AppContent({ user, onLogout, isLoggingOut }) {
               </article>
 
               <article>
-                <h3>Browser capture</h3>
+                <h3>Browser extension</h3>
                 <p>
-                  Copy this bookmarklet, create a browser bookmark named JobOps
-                  Capture, and paste the copied code as the bookmark URL. Then open a
-                  job page and click that bookmark.
+                  The old browser-bookmark flow has been removed. The next capture version will
+                  use a browser extension that can capture the visible job page,
+                  analyze it with OCR, and send the reviewed result back to JobOps.
                 </p>
-                <textarea
-                  className="capture-bookmarklet-code"
-                  value={bookmarkletHref}
-                  readOnly
-                  rows={3}
-                  aria-label="JobOps Capture bookmarklet code"
-                  onFocus={(event) => event.target.select()}
-                />
-                <button
-                  type="button"
-                  className="btn btn-primary capture-bookmarklet-button"
-                  onClick={copyBookmarklet}
-                >
-                  {bookmarkletCopied ? "Copied" : "Copy bookmarklet"}
-                </button>
+                <div className="capture-extension-placeholder">
+                  Extension capture coming soon
+                </div>
               </article>
             </div>
 
