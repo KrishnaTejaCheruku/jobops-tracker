@@ -1225,13 +1225,23 @@ td small {
   line-height: 1.45;
 }
 
-.capture-panel-grid a.btn {
-  display: inline-flex;
-  text-decoration: none;
+.capture-bookmarklet-code {
+  width: 100%;
+  min-height: 76px;
+  margin-top: 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--text);
+  padding: 10px 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.45;
+  resize: vertical;
 }
 
 .capture-bookmarklet-button {
-  margin-top: 4px;
+  margin-top: 10px;
   box-shadow:
     0 14px 30px rgba(111, 33, 79, 0.22),
     0 0 0 3px rgba(111, 33, 79, 0.1);

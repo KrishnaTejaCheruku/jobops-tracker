@@ -98,11 +98,20 @@ describe("job capture flow", () => {
 
     cy.contains("Capture payload could not be read.").should("be.visible");
     cy.contains("button", "Browser Capture").should("have.class", "btn-capture");
+
     cy.get(".capture-panel").within(() => {
-      cy.contains("a.capture-bookmarklet-button", "Browser Capture")
-        .should("have.class", "btn-primary")
-        .and("have.attr", "href")
-        .and("match", /^javascript:/);
+      cy.contains("h3", "Browser capture").should("be.visible");
+
+      cy.get("a.capture-bookmarklet-button").should("not.exist");
+
+      cy.get("textarea.capture-bookmarklet-code")
+        .should("be.visible")
+        .invoke("val")
+        .should("match", /^javascript:/);
+
+      cy.contains("button.capture-bookmarklet-button", "Copy bookmarklet")
+        .should("be.visible")
+        .and("have.class", "btn-primary");
     });
 
     cy.get('input[type="url"]').type("https://company.example/jobs/platform");
