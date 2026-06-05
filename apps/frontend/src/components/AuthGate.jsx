@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { cloneElement, isValidElement, useEffect, useMemo, useState } from "react";
 import {
   getCurrentUser,
   logoutUser,
@@ -344,25 +344,13 @@ export default function AuthGate({ children }) {
 
   return (
     <div className="auth-shell">
-      <div className="auth-user-bar">
-        <div className="auth-user-chip">
-          <span className="auth-user-avatar">
-            {user.email?.charAt(0)?.toUpperCase() || "U"}
-          </span>
-          <span>{user.email}</span>
-        </div>
-
-        <button
-          type="button"
-          className="auth-logout-button"
-          disabled={isSubmitting}
-          onClick={handleLogout}
-        >
-          Logout
-        </button>
-      </div>
-
-      {children}
+      {isValidElement(children)
+        ? cloneElement(children, {
+            user,
+            onLogout: handleLogout,
+            isLoggingOut: isSubmitting,
+          })
+        : children}
     </div>
   );
 }
