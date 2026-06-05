@@ -50,6 +50,15 @@ function normalizeSource(value, jobURL = "") {
     return "LinkedIn";
   }
 
+  if (
+    hostname.includes("indeed") ||
+    hostname.includes("stepstone") ||
+    hostname.includes("glassdoor") ||
+    hostname.includes("xing")
+  ) {
+    return "Other";
+  }
+
   if (hostname) {
     return "Company Website";
   }
@@ -186,16 +195,24 @@ function jobOpsCaptureBookmarkletRunner() {
 
   const hostname = location.hostname.replace(/^www\./, "");
 
-  const splitLinkedInParts = (value) =>
-    cleanText(value)
-      .split(/\n|·|•|\|/)
-      .map(cleanText)
-      .filter(Boolean);
+  const isLinkedInHost = (host) => {
+    const normalizedHost = String(host || "").toLowerCase();
+    return (
+      normalizedHost === "linkedin.com" ||
+      normalizedHost.endsWith(".linkedin.com")
+    );
+  };
 
-  const isLinkedInNoise = (value) =>
-    /applicant|ago|reposted|promoted|actively|viewed|be among|connections?|followers?|full-time|part-time|contract|internship|temporary|permanent|hybrid|remote|on-site|onsite|vor \d|bewerb|linkedin/i.test(
+  const isNoise = (value) =>
+    /applicant|bewerber|ago|reposted|promoted|actively|viewed|be among|connections?|followers?|full-time|part-time|contract|internship|temporary|permanent|posted|apply|easy apply|save|saved|share|linkedin/i.test(
       value,
     );
+
+  const splitParts = (value) =>
+    cleanText(value)
+      .split(/\n|·|•|\||;/)
+      .map(cleanText)
+      .filter(Boolean);
 
   const cleanLinkedInTitle = (value) => {
     let title = cleanText(value)
@@ -213,57 +230,171 @@ function jobOpsCaptureBookmarkletRunner() {
     return cleanText(title);
   };
 
+  const cleanLinkedInCompanyName = (value) =>
+    cleanText(value)
+      .replace(/\s*\|\s*Jobs.*$/i, "")
+      .replace(/\s*\|\s*LinkedIn.*$/i, "")
+      .replace(/\s+jobs\s*$/i, "")
+      .trim();
+
   const companyFromLinkedInTitle = (value) => {
-    const title = cleanText(value).replace(/\|\s*LinkedIn.*$/i, "");
+    const title = cleanText(value)
+      .replace(/\|\s*LinkedIn.*$/i, "")
+      .replace(/\s*\|\s*Jobs.*$/i, "");
+
     const parts = title.split(" - ").map(cleanText).filter(Boolean);
 
     if (parts.length > 1) {
-      return parts.slice(1).join(" - ");
+      return cleanLinkedInCompanyName(parts.slice(1).join(" - "));
     }
 
     const hiringMatch = title.match(/^(.+?) hiring .+?(?: in |$)/i);
-    return cleanText(hiringMatch && hiringMatch[1]);
+    return cleanLinkedInCompanyName(hiringMatch && hiringMatch[1]);
+  };
+
+  const readLinkedInTopCardText = () =>
+    readFirstText([
+      ".job-details-jobs-unified-top-card",
+      ".jobs-unified-top-card",
+      ".jobs-search__job-details--container",
+      ".jobs-details",
+      ".top-card-layout",
+      "main",
+    ]);
+
+  const normalizeLocationCandidate = (value, companyName = "") => {
+    let candidate = cleanText(value);
+
+    if (!candidate) {
+      return "";
+    }
+
+    const company = cleanText(companyName);
+
+    if (company) {
+      candidate = candidate.replace(company, " ");
+    }
+
+    candidate = candidate
+      .replace(/\b\d+\s+applicants?\b/gi, " ")
+      .replace(/\b\d+\s+Bewerber(?:innen)?\b/gi, " ")
+      .replace(/\b\d+\s+connections?\b/gi, " ")
+      .replace(/\b\d+\s+followers?\b/gi, " ")
+      .replace(/\bReposted\b/gi, " ")
+      .replace(/\bPromoted\b/gi, " ")
+      .replace(/\bActively recruiting\b/gi, " ")
+      .replace(/\bBe among the first\b/gi, " ")
+      .replace(/\bViewed\b/gi, " ")
+      .replace(/\bPosted\b/gi, " ")
+      .replace(/\bApply\b/gi, " ")
+      .replace(/\bEasy Apply\b/gi, " ")
+      .replace(/\bSave\b/gi, " ")
+      .replace(/\bSaved\b/gi, " ")
+      .replace(/\bShare\b/gi, " ")
+      .replace(/\bVor\s+\d+\s+\w+\b/gi, " ")
+      .replace(/\b\d+\s+\w+\s+ago\b/gi, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    return candidate;
+  };
+
+  const looksLikeLocation = (value) => {
+    const candidate = cleanText(value);
+
+    if (!candidate) {
+      return false;
+    }
+
+    if (
+      /linkedin|applicant|bewerber|reposted|promoted|viewed|apply|save|share/i.test(
+        candidate,
+      )
+    ) {
+      return false;
+    }
+
+    return (
+      candidate.includes(",") ||
+      candidate.includes("/") ||
+      /\bGermany\b/i.test(candidate) ||
+      /\bDeutschland\b/i.test(candidate) ||
+      /\bRemote\b/i.test(candidate) ||
+      /\bHybrid\b/i.test(candidate) ||
+      /\bOn-site\b/i.test(candidate) ||
+      /\bOnsite\b/i.test(candidate) ||
+      /\bArea\b/i.test(candidate) ||
+      /\bRegion\b/i.test(candidate) ||
+      /\bMetropolitan\b/i.test(candidate) ||
+      /\bBerlin\b/i.test(candidate) ||
+      /\bHamburg\b/i.test(candidate) ||
+      /\bMunich\b/i.test(candidate) ||
+      /\bMünchen\b/i.test(candidate) ||
+      /\bFrankfurt\b/i.test(candidate) ||
+      /\bCologne\b/i.test(candidate) ||
+      /\bKöln\b/i.test(candidate) ||
+      /\bStuttgart\b/i.test(candidate) ||
+      /\bDüsseldorf\b/i.test(candidate) ||
+      /\bHannover\b/i.test(candidate) ||
+      /\bLeipzig\b/i.test(candidate) ||
+      /\bDresden\b/i.test(candidate) ||
+      /\bBremen\b/i.test(candidate) ||
+      /\bNuremberg\b/i.test(candidate) ||
+      /\bNürnberg\b/i.test(candidate)
+    );
   };
 
   const readLinkedInLocation = (companyName) => {
-    const selectors = [
+    const directSelectors = [
       ".job-details-jobs-unified-top-card__primary-description-container .tvm__text",
       ".job-details-jobs-unified-top-card__tertiary-description-container .tvm__text",
       ".job-details-jobs-unified-top-card__primary-description-container",
       ".job-details-jobs-unified-top-card__tertiary-description-container",
+      ".jobs-unified-top-card__primary-description",
+      ".jobs-unified-top-card__subtitle-primary-grouping",
+      ".jobs-unified-top-card__subtitle-secondary-grouping",
       ".jobs-unified-top-card__bullet",
+      ".topcard__flavor-row",
       ".topcard__flavor--bullet",
     ];
 
-    const candidates = readManyText(selectors).flatMap(splitLinkedInParts);
-    const normalizedCompany = cleanText(companyName).toLowerCase();
+    const directCandidates = readManyText(directSelectors)
+      .flatMap(splitParts)
+      .map((candidate) => normalizeLocationCandidate(candidate, companyName))
+      .filter(Boolean);
 
-    for (const candidate of candidates) {
-      const lowered = candidate.toLowerCase();
-
-      if (
-        !candidate ||
-        lowered === normalizedCompany ||
-        lowered.includes("linkedin") ||
-        isLinkedInNoise(candidate)
-      ) {
-        continue;
-      }
-
-      if (
-        /[a-zäöüß],?\s+[a-zäöüß]/i.test(candidate) ||
-        candidate.includes(",")
-      ) {
+    for (const candidate of directCandidates) {
+      if (looksLikeLocation(candidate)) {
         return candidate;
       }
     }
 
-    for (const candidate of candidates) {
-      const lowered = candidate.toLowerCase();
+    const topCardText = readLinkedInTopCardText();
 
-      if (candidate && lowered !== normalizedCompany && !isLinkedInNoise(candidate)) {
+    const topCardParts = splitParts(topCardText)
+      .map((candidate) => normalizeLocationCandidate(candidate, companyName))
+      .filter(Boolean);
+
+    for (const candidate of topCardParts) {
+      if (looksLikeLocation(candidate)) {
         return candidate;
       }
+    }
+
+    const commaMatch = topCardText.match(
+      /([A-ZÄÖÜ][A-Za-zÄÖÜäöüß.\-/ ]+,\s*[A-ZÄÖÜ][A-Za-zÄÖÜäöüß.\-/ ]+(?:,\s*[A-ZÄÖÜ][A-Za-zÄÖÜäöüß.\-/ ]+)?)/,
+    );
+
+    if (commaMatch) {
+      return normalizeLocationCandidate(commaMatch[1], companyName);
+    }
+
+    const germanyMatch = topCardText.match(
+      /([A-ZÄÖÜ][A-Za-zÄÖÜäöüß.\-/ ]+\s+(?:Germany|Deutschland|Area|Region|Metropolitan Area))/i,
+    );
+
+    if (germanyMatch) {
+      return normalizeLocationCandidate(germanyMatch[1], companyName);
     }
 
     return "";
@@ -365,7 +496,7 @@ function jobOpsCaptureBookmarkletRunner() {
   const readLinkedInJob = () => {
     const metaTitle = readMeta("og:title") || cleanText(document.title);
 
-    const companyName =
+    const companyName = cleanLinkedInCompanyName(
       readFirstText([
         ".job-details-jobs-unified-top-card__company-name a",
         ".job-details-jobs-unified-top-card__company-name",
@@ -373,7 +504,8 @@ function jobOpsCaptureBookmarkletRunner() {
         ".jobs-unified-top-card__company-name",
         ".topcard__org-name-link",
         ".top-card-layout__card .topcard__flavor-row a",
-      ]) || companyFromLinkedInTitle(metaTitle);
+      ]) || companyFromLinkedInTitle(metaTitle),
+    );
 
     const notes =
       selectedText() ||
@@ -404,15 +536,89 @@ function jobOpsCaptureBookmarkletRunner() {
     };
   };
 
-  const structuredData = readJSONLDJobPosting();
-  const isLinkedInHost = (host) => {
-    const normalizedHost = String(host || "").toLowerCase();
-    return (
-      normalizedHost === "linkedin.com" ||
-      normalizedHost.endsWith(".linkedin.com")
-    );
+  const readGenericLocation = () => {
+    const candidates = readManyText([
+      '[data-automation-id="locations"]',
+      '[data-automation-id="location"]',
+      '[data-testid="job-location"]',
+      '[data-testid="location"]',
+      '[class*="location"]',
+      '[class*="Location"]',
+      '[id*="location"]',
+      '[id*="Location"]',
+      ".posting-categories",
+      ".job-location",
+      ".job__location",
+      ".jobsearch-JobInfoHeader-subtitle",
+      ".jobsearch-DesktopStickyContainer-subtitle",
+      ".jobsearch-InlineCompanyRating",
+    ])
+      .flatMap(splitParts)
+      .map((candidate) => normalizeLocationCandidate(candidate))
+      .filter(Boolean);
+
+    for (const candidate of candidates) {
+      if (looksLikeLocation(candidate)) {
+        return candidate;
+      }
+    }
+
+    return "";
   };
-  const siteData = isLinkedInHost(hostname) ? readLinkedInJob() : {};
+
+  const readGenericCompany = () =>
+    readFirstText([
+      '[data-automation-id="company"]',
+      '[data-testid="company-name"]',
+      '[class*="company"] a',
+      '[class*="Company"] a',
+      '[class*="company"]',
+      '[class*="Company"]',
+      ".posting-company",
+      ".job-company",
+      ".job__company",
+    ]);
+
+  const readGenericJob = () => {
+    const title =
+      readFirstText([
+        '[data-automation-id="jobPostingHeader"]',
+        '[data-testid="job-title"]',
+        '[class*="job-title"]',
+        '[class*="JobTitle"]',
+        ".posting-headline h2",
+        ".job-title",
+        ".job__title",
+        "h1",
+      ]) ||
+      readMeta("og:title") ||
+      cleanText(document.title);
+
+    const notes =
+      selectedText() ||
+      readFirstText([
+        '[data-automation-id="jobPostingDescription"]',
+        '[data-testid="job-description"]',
+        '[class*="description"]',
+        '[class*="Description"]',
+        ".posting-requirements",
+        ".posting-description",
+        ".job-description",
+        ".job__description",
+        "main",
+      ]) ||
+      readMeta("description");
+
+    return {
+      job_title: title,
+      company_name: readGenericCompany(),
+      location: readGenericLocation(),
+      notes: cleanText(notes).slice(0, 1200),
+    };
+  };
+
+  const structuredData = readJSONLDJobPosting();
+  const siteData = isLinkedInHost(hostname) ? readLinkedInJob() : readGenericJob();
 
   const fallbackTitle =
     readMeta("og:title") || readFirstText(["h1"]) || cleanText(document.title);
