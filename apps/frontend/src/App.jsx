@@ -434,6 +434,7 @@ function AppContent({ user, onLogout, isLoggingOut }) {
   const [captureLoading, setCaptureLoading] = useState(false);
   const [capturePanelOpen, setCapturePanelOpen] = useState(false);
   const [manualCaptureURL, setManualCaptureURL] = useState("");
+  const [bookmarkletCopied, setBookmarkletCopied] = useState(false);
 
   const isEditing = editingId !== null;
   const bookmarkletHref = useMemo(() => buildBookmarklet(APP_BASE_URL), []);
@@ -730,6 +731,18 @@ function AppContent({ user, onLogout, isLoggingOut }) {
   function closeCapturePanel() {
     setCapturePanelOpen(false);
     setManualCaptureURL("");
+    setBookmarkletCopied(false);
+  }
+
+  async function copyBookmarklet() {
+    setCaptureError("");
+
+    try {
+      await navigator.clipboard.writeText(bookmarkletHref);
+      setBookmarkletCopied(true);
+    } catch {
+      setCaptureError("Could not copy bookmarklet. Select and copy the code manually.");
+    }
   }
 
   function openManualCapture(event) {
@@ -1163,12 +1176,25 @@ function AppContent({ user, onLogout, isLoggingOut }) {
               <article>
                 <h3>Browser capture</h3>
                 <p>
-                  Drag this highlighted bookmarklet to your bookmarks bar, then click
-                  it while viewing a job page.
+                  Copy this bookmarklet, create a browser bookmark named JobOps
+                  Capture, and paste the copied code as the bookmark URL. Then open a
+                  job page and click that bookmark.
                 </p>
-                <a className="btn btn-primary capture-bookmarklet-button" href={bookmarkletHref}>
-                  Browser Capture
-                </a>
+                <textarea
+                  className="capture-bookmarklet-code"
+                  value={bookmarkletHref}
+                  readOnly
+                  rows={3}
+                  aria-label="JobOps Capture bookmarklet code"
+                  onFocus={(event) => event.target.select()}
+                />
+                <button
+                  type="button"
+                  className="btn btn-primary capture-bookmarklet-button"
+                  onClick={copyBookmarklet}
+                >
+                  {bookmarkletCopied ? "Copied" : "Copy bookmarklet"}
+                </button>
               </article>
             </div>
 
