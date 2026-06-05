@@ -116,7 +116,8 @@ describe("authenticated dashboard", () => {
     cy.wait(["@applications", "@cvVersions", "@analytics"]);
 
     cy.contains("devops@example.com").should("be.visible");
-    cy.contains("Open-source job application tracker").should("be.visible");
+    cy.contains("Good morning, devops").should("be.visible");
+    cy.contains("Pipeline snapshot").should("be.visible");
     cy.contains("Dashboard Analytics").should("be.visible");
     cy.contains("Platform Engineer").should("be.visible");
     cy.contains("Acme Cloud").should("be.visible");

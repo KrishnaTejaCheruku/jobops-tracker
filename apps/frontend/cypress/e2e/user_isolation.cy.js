@@ -73,7 +73,7 @@ describe("user isolation", () => {
     cy.contains("User A Platform Engineer").should("be.visible");
     cy.contains("Tenant A Cloud").should("be.visible");
     cy.contains("User B DevOps Engineer").should("not.exist");
-    cy.contains("Total").parent().contains("100").should("be.visible");
+    cy.contains("All tracked applications").parent().contains("100").should("be.visible");
   });
 
   it("renders a different isolated dataset for another user", () => {
@@ -90,6 +90,6 @@ describe("user isolation", () => {
     cy.contains("User B DevOps Engineer").should("be.visible");
     cy.contains("Tenant B Systems").should("be.visible");
     cy.contains("User A Platform Engineer").should("not.exist");
-    cy.contains("Total").parent().contains("100").should("be.visible");
+    cy.contains("All tracked applications").parent().contains("100").should("be.visible");
   });
 });

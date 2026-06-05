@@ -6,7 +6,7 @@ describe("CSV import and export auth behavior", () => {
     cy.visit("/");
     cy.wait("@currentUser");
 
-    cy.contains("Passwordless login").should("be.visible");
+    cy.contains("Welcome back").should("be.visible");
     cy.contains("CSV Import / Export").should("not.exist");
     cy.contains("Export CSV").should("not.exist");
   });
