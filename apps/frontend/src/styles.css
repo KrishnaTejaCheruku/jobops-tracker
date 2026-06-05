@@ -791,6 +791,7 @@ h3 {
 .analytics-card {
   margin-bottom: 22px;
   padding-bottom: 22px;
+  color: var(--text-main);
 }
 
 .analytics-metrics {
@@ -802,15 +803,17 @@ h3 {
 
 .analytics-metric {
   padding: 16px;
-  border: 1px solid var(--border);
+  border: 1px solid rgba(30, 41, 59, 0.1);
   border-radius: 10px;
-  background: var(--card-soft);
+  background: #ffffff;
+  color: var(--text-main);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
 }
 
 .analytics-metric span {
   display: block;
   margin-bottom: 8px;
-  color: var(--muted);
+  color: #475569;
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 0.06em;
@@ -820,25 +823,26 @@ h3 {
 .analytics-metric strong {
   display: block;
   margin-bottom: 6px;
+  color: #0f172a;
   font-size: 28px;
   letter-spacing: 0;
 }
 
 .analytics-metric p {
   margin: 0;
-  color: var(--muted);
+  color: #475569;
   font-size: 13px;
   font-weight: 700;
 }
 
 .analytics-metric-danger {
   border-color: #fecaca;
-  background: var(--red-soft);
+  background: #fff7f8;
 }
 
 .analytics-metric-warning {
-  border-color: #fed7aa;
-  background: var(--amber-soft);
+  border-color: #fde68a;
+  background: #fffbeb;
 }
 
 .analytics-groups {
@@ -850,9 +854,11 @@ h3 {
 
 .analytics-group {
   padding: 16px;
-  border: 1px solid var(--border);
+  border: 1px solid rgba(30, 41, 59, 0.1);
   border-radius: 10px;
-  background: white;
+  background: #ffffff;
+  color: var(--text-main);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
 }
 
 .analytics-group-header {
@@ -865,6 +871,7 @@ h3 {
 
 .analytics-group-header h3 {
   margin: 0;
+  color: #0f172a;
 }
 
 .analytics-group-header span {
@@ -874,8 +881,8 @@ h3 {
   min-width: 30px;
   height: 30px;
   border-radius: 999px;
-  background: #eef2ff;
-  color: #3730a3;
+  background: #e0e7ff;
+  color: #312e81;
   font-size: 12px;
   font-weight: 950;
 }
@@ -890,7 +897,7 @@ h3 {
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 6px;
-  color: #344054;
+  color: #334155;
   font-size: 13px;
   font-weight: 850;
 }
@@ -899,13 +906,13 @@ h3 {
   height: 9px;
   overflow: hidden;
   border-radius: 999px;
-  background: #eef2f7;
+  background: #e2e8f0;
 }
 
 .analytics-bar-fill {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--blue), var(--purple));
+  background: linear-gradient(90deg, #2563eb, #7c3aed);
 }
 
 .workspace {
@@ -1008,6 +1015,12 @@ textarea {
   background: linear-gradient(135deg, var(--purple), var(--navy));
   color: white;
   box-shadow: 0 12px 26px rgba(111, 33, 79, 0.2);
+}
+
+.btn-capture {
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  color: white;
+  box-shadow: 0 14px 30px rgba(37, 99, 235, 0.24);
 }
 
 .btn-soft {
@@ -1215,6 +1228,13 @@ td small {
 .capture-panel-grid a.btn {
   display: inline-flex;
   text-decoration: none;
+}
+
+.capture-bookmarklet-button {
+  margin-top: 4px;
+  box-shadow:
+    0 14px 30px rgba(111, 33, 79, 0.22),
+    0 0 0 3px rgba(111, 33, 79, 0.1);
 }
 
 .capture-panel-error {
@@ -1923,6 +1943,13 @@ html[data-theme="dark"] .detail-block {
   border-color: var(--border);
 }
 
+html[data-theme="dark"] .analytics-group,
+html[data-theme="dark"] .analytics-metric {
+  background: #111827;
+  border-color: rgba(148, 163, 184, 0.22);
+  color: #f8fafc;
+}
+
 html[data-theme="dark"] input,
 html[data-theme="dark"] select,
 html[data-theme="dark"] textarea {
@@ -1960,6 +1987,15 @@ html[data-theme="dark"] .detail-block p {
   color: var(--muted);
 }
 
+html[data-theme="dark"] .analytics-metric span {
+  color: #cbd5e1;
+}
+
+html[data-theme="dark"] .analytics-metric strong,
+html[data-theme="dark"] .analytics-group-header h3 {
+  color: #f8fafc;
+}
+
 html[data-theme="dark"] h3,
 html[data-theme="dark"] label,
 html[data-theme="dark"] .analytics-bar-label,
@@ -1970,6 +2006,11 @@ html[data-theme="dark"] .detail-block p {
 html[data-theme="dark"] .btn-primary {
   background: linear-gradient(135deg, #2563eb, #7c3aed);
   color: white;
+}
+
+html[data-theme="dark"] .btn-capture {
+  background: linear-gradient(135deg, #38bdf8, #8b5cf6);
+  color: #06111f;
 }
 
 html[data-theme="dark"] .btn-soft {
@@ -1984,8 +2025,8 @@ html[data-theme="dark"] .btn-danger {
 
 html[data-theme="dark"] .status,
 html[data-theme="dark"] .analytics-group-header span {
-  background: rgba(96, 165, 250, 0.14);
-  color: #bfdbfe;
+  background: rgba(147, 197, 253, 0.18);
+  color: #dbeafe;
 }
 
 html[data-theme="dark"] .status-applied,

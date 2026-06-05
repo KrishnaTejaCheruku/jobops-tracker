@@ -10,6 +10,7 @@
 
 .auth-layout {
   width: min(100%, 1740px);
+  max-width: 100%;
   min-height: calc(100vh - 60px);
   margin: 0 auto;
   border: 1px solid rgba(42, 30, 52, 0.1);
@@ -40,7 +41,23 @@
   font-weight: 900;
 }
 
-.auth-logo-image,
+.auth-brand span {
+  font-size: 22px;
+  letter-spacing: 0;
+}
+
+.auth-logo-image {
+  width: 72px;
+  height: 72px;
+  flex: 0 0 auto;
+  border-radius: 18px;
+  object-fit: contain;
+  background: #071322;
+  box-shadow:
+    0 18px 40px rgba(39, 23, 47, 0.22),
+    0 0 0 1px rgba(255, 255, 255, 0.65) inset;
+}
+
 .auth-preview-brand img {
   width: 44px;
   height: 44px;
@@ -135,6 +152,7 @@
 .auth-product-copy p:last-child {
   max-width: 600px;
   font-size: 19px;
+  overflow-wrap: anywhere;
 }
 
 .auth-workflow {
@@ -175,10 +193,12 @@
   font-size: 14px;
   font-weight: 650;
   line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
 .auth-card {
   width: 100%;
+  min-width: 0;
   border: 1px solid rgba(42, 30, 52, 0.1);
   border-radius: 28px;
   background: rgba(255, 255, 255, 0.92);
@@ -357,8 +377,8 @@
 }
 
 .auth-preview-brand img {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
 }
 
 .auth-preview-sidebar > span {
@@ -556,6 +576,7 @@
   }
 
   .auth-layout {
+    width: 100%;
     min-height: calc(100vh - 20px);
     border-radius: 16px;
   }
@@ -563,6 +584,36 @@
   .auth-topbar,
   .auth-hero {
     padding: 18px;
+  }
+
+  .auth-hero {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 34px;
+  }
+
+  .auth-product,
+  .auth-product-copy,
+  .auth-product-copy p,
+  .auth-workflow,
+  .auth-workflow-item,
+  .auth-workflow-item div,
+  .auth-card,
+  .auth-copy,
+  .auth-form,
+  .auth-tabs {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .auth-logo-image {
+    width: 58px;
+    height: 58px;
+    border-radius: 14px;
+  }
+
+  .auth-brand span {
+    font-size: 19px;
   }
 
   .auth-nav {
@@ -591,11 +642,6 @@
   }
 
   .auth-dashboard-preview {
-    grid-template-columns: 1fr;
-    margin: 0 18px 18px;
-  }
-
-  .auth-preview-sidebar {
     display: none;
   }
 

@@ -949,8 +949,8 @@ function AppContent({ user, onLogout, isLoggingOut }) {
           </label>
 
           <div className="dashboard-top-actions">
-            <button type="button" className="btn btn-soft" onClick={openCapturePanel}>
-              Capture Job
+            <button type="button" className="btn btn-capture" onClick={openCapturePanel}>
+              Browser Capture
             </button>
             <button
               type="button"
@@ -1163,11 +1163,11 @@ function AppContent({ user, onLogout, isLoggingOut }) {
               <article>
                 <h3>Browser capture</h3>
                 <p>
-                  Drag this bookmarklet to your browser bookmarks, then use it on a job
-                  page.
+                  Drag this highlighted bookmarklet to your bookmarks bar, then click
+                  it while viewing a job page.
                 </p>
-                <a className="btn btn-soft" href={bookmarkletHref}>
-                  JobOps Capture
+                <a className="btn btn-primary capture-bookmarklet-button" href={bookmarkletHref}>
+                  Browser Capture
                 </a>
               </article>
             </div>

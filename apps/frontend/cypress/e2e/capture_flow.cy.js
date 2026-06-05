@@ -97,6 +97,14 @@ describe("job capture flow", () => {
     cy.wait(["@currentUser", "@applications", "@cvVersions", "@analytics"]);
 
     cy.contains("Capture payload could not be read.").should("be.visible");
+    cy.contains("button", "Browser Capture").should("have.class", "btn-capture");
+    cy.get(".capture-panel").within(() => {
+      cy.contains("a.capture-bookmarklet-button", "Browser Capture")
+        .should("have.class", "btn-primary")
+        .and("have.attr", "href")
+        .and("match", /^javascript:/);
+    });
+
     cy.get('input[type="url"]').type("https://company.example/jobs/platform");
     cy.contains("button", "Review job").click();
     cy.contains("Review captured job").should("be.visible");
