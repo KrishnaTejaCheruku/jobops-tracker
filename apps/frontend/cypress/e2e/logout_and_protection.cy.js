@@ -24,7 +24,7 @@ describe("logout and protected application shell", () => {
     cy.visit("/");
     cy.wait("@currentUser");
 
-    cy.contains("Passwordless login").should("be.visible");
+    cy.contains("Welcome back").should("be.visible");
     cy.contains("Dashboard Analytics").should("not.exist");
     cy.then(() => {
       expect(protectedRequestCount).to.equal(0);
@@ -47,7 +47,7 @@ describe("logout and protected application shell", () => {
     cy.contains("button", "Logout").click();
     cy.wait("@logout");
 
-    cy.contains("Passwordless login").should("be.visible");
+    cy.contains("Welcome back").should("be.visible");
     cy.get("#auth-email").should("be.visible");
     cy.contains("logout@example.com").should("not.exist");
   });

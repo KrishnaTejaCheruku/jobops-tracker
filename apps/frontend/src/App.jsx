@@ -5,6 +5,7 @@ import ApplicationDetailModal from "./components/ApplicationDetailModal";
 import ApplicationForm from "./components/ApplicationForm";
 import ApplicationsTable from "./components/ApplicationsTable";
 import AuthGate from "./components/AuthGate";
+import CaptureReviewModal from "./components/CaptureReviewModal";
 import CSVDataPanel from "./components/CSVDataPanel";
 import CVVersionsPanel from "./components/CVVersionsPanel";
 import FiltersBar from "./components/FiltersBar";
@@ -15,6 +16,7 @@ import SummaryCard from "./components/SummaryCard";
 import ThemeToggle from "./components/ThemeToggle";
 
 import {
+  APP_BASE_URL,
   EMPTY_APPLICATION_FORM,
   EMPTY_CV_VERSION_FORM,
   EMPTY_FILTERS,
@@ -35,6 +37,11 @@ import {
 } from "./lib/api";
 
 import { getDateOnly, getFollowUpState } from "./lib/date";
+import {
+  buildBookmarklet,
+  buildManualCapturePayload,
+  parseCaptureFromLocation,
+} from "./lib/capture";
 
 function getTodayDateValue() {
   const now = new Date();
@@ -157,8 +164,14 @@ function AppContent() {
 
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [capturePayload, setCapturePayload] = useState(null);
+  const [captureError, setCaptureError] = useState("");
+  const [captureLoading, setCaptureLoading] = useState(false);
+  const [capturePanelOpen, setCapturePanelOpen] = useState(false);
+  const [manualCaptureURL, setManualCaptureURL] = useState("");
 
   const isEditing = editingId !== null;
+  const bookmarkletHref = useMemo(() => buildBookmarklet(APP_BASE_URL), []);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -282,6 +295,22 @@ function AppContent() {
   useEffect(() => {
     refreshCVVersions();
     refreshAnalytics();
+  }, []);
+
+  useEffect(() => {
+    try {
+      const parsedPayload = parseCaptureFromLocation(window.location);
+
+      if (parsedPayload) {
+        setCapturePayload(parsedPayload);
+        setCaptureError("");
+        window.history.replaceState({}, "", "/");
+      }
+    } catch (err) {
+      setCaptureError(err.message);
+      setCapturePanelOpen(true);
+      window.history.replaceState({}, "", "/");
+    }
   }, []);
 
   function toggleTheme() {
@@ -420,6 +449,64 @@ function AppContent() {
     setFieldErrors({});
     setMessage("");
     setError("");
+  }
+
+  function openCapturePanel() {
+    setCapturePanelOpen(true);
+    setCaptureError("");
+    setMessage("");
+    setError("");
+  }
+
+  function closeCapturePanel() {
+    setCapturePanelOpen(false);
+    setManualCaptureURL("");
+  }
+
+  function openManualCapture(event) {
+    event.preventDefault();
+    const payload = buildManualCapturePayload(manualCaptureURL);
+
+    setCapturePayload(payload);
+    setCapturePanelOpen(false);
+    setManualCaptureURL("");
+    setCaptureError("");
+  }
+
+  function scrollToCSVImport() {
+    closeCapturePanel();
+    document.querySelector(".csv-card, .cv-card")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }
+
+  async function saveCapturedApplication(payload) {
+    setCaptureLoading(true);
+    setCaptureError("");
+    setMessage("");
+    setError("");
+
+    try {
+      await createApplication({
+        ...payload,
+        cv_version_id: Number(payload.cv_version_id) || 0,
+      });
+
+      const firstPage = {
+        ...pagination,
+        page: 1,
+      };
+
+      setCapturePayload(null);
+      setPagination(firstPage);
+      setMessage("Captured job saved successfully.");
+      await refreshDashboardData(filters, firstPage, sort);
+    } catch (err) {
+      setCaptureError(err.message);
+    } finally {
+      setCaptureLoading(false);
+    }
   }
 
   async function submitApplication(event) {
@@ -591,7 +678,12 @@ function AppContent() {
           </div>
         </div>
 
-        <ThemeToggle theme={theme} onToggle={toggleTheme} />
+        <div className="hero-actions">
+          <button type="button" className="btn btn-primary" onClick={openCapturePanel}>
+            Capture Job
+          </button>
+          <ThemeToggle theme={theme} onToggle={toggleTheme} />
+        </div>
       </section>
 
       <section className="summary-grid">
@@ -693,6 +785,83 @@ function AppContent() {
         history={statusHistory}
         loading={historyLoading}
         onClose={closeHistory}
+      />
+
+      {capturePanelOpen && (
+        <section className="capture-panel-overlay" onClick={closeCapturePanel}>
+          <div
+            className="capture-panel card"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="card-header">
+              <div>
+                <p className="section-kicker">Capture job</p>
+                <h2>Add a role from another page</h2>
+                <p className="muted">
+                  Start with a URL, import CSV data, or install the browser capture
+                  bookmarklet.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                className="btn btn-soft btn-small"
+                onClick={closeCapturePanel}
+              >
+                Close
+              </button>
+            </div>
+
+            <form className="capture-manual-form" onSubmit={openManualCapture}>
+              <label>
+                Paste job URL manually
+                <input
+                  type="url"
+                  value={manualCaptureURL}
+                  onChange={(event) => setManualCaptureURL(event.target.value)}
+                  placeholder="https://company.example/jobs/devops-engineer"
+                  required
+                />
+              </label>
+
+              <button type="submit" className="btn btn-primary">
+                Review job
+              </button>
+            </form>
+
+            <div className="capture-panel-grid">
+              <article>
+                <h3>Import CSV</h3>
+                <p>Use the existing import/export panel for bulk application data.</p>
+                <button type="button" className="btn btn-soft" onClick={scrollToCSVImport}>
+                  Open CSV import
+                </button>
+              </article>
+
+              <article>
+                <h3>Browser capture</h3>
+                <p>
+                  Drag this bookmarklet to your browser bookmarks, then use it on a job
+                  page.
+                </p>
+                <a className="btn btn-soft" href={bookmarkletHref}>
+                  JobOps Capture
+                </a>
+              </article>
+            </div>
+
+            {captureError && <div className="capture-panel-error">{captureError}</div>}
+          </div>
+        </section>
+      )}
+
+      <CaptureReviewModal
+        initialPayload={capturePayload}
+        cvVersions={cvVersions}
+        loading={captureLoading}
+        error={captureError}
+        onClose={() => setCapturePayload(null)}
+        onSave={saveCapturedApplication}
       />
     </main>
   );

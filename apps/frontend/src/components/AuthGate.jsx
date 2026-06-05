@@ -136,145 +136,205 @@ export default function AuthGate({ children }) {
     return (
       <div className="auth-page">
         <section className="auth-layout" aria-label="JobOps Tracker login">
-          <div className="auth-product">
+          <header className="auth-topbar">
             <div className="auth-brand">
               <img className="auth-logo-image" src={jobopsLogo} alt="JobOps" />
-              <div>
-                <h1>JobOps Tracker</h1>
-                <p>Track applications without spreadsheet chaos.</p>
-              </div>
+              <span>JobOps Tracker</span>
             </div>
 
-            <div className="auth-product-copy">
-              <p className="auth-kicker">Private career pipeline</p>
-              <h2>Run your job search like an operating system.</h2>
-              <p>
-                Keep every role, recruiter conversation, follow-up, and CV version in one
-                focused workspace built for repeated daily use.
-              </p>
+            <nav className="auth-nav" aria-label="Product sections">
+              <button type="button">Product</button>
+              <button type="button">Features</button>
+              <button type="button">Security</button>
+              <button type="button">Docs</button>
+            </nav>
+
+            <div className="auth-top-actions">
+              <button type="button">Sign in</button>
+              <button type="button" className="auth-continue-button">
+                Continue
+              </button>
             </div>
+          </header>
 
-            <div className="auth-workflow" aria-label="JobOps workflow">
-              <div className="auth-workflow-item">
-                <span>01</span>
-                <div>
-                  <strong>Capture the role</strong>
-                  <p>Company, recruiter, source, salary range, notes, and job link.</p>
-                </div>
-              </div>
-
-              <div className="auth-workflow-item">
-                <span>02</span>
-                <div>
-                  <strong>Attach the right CV</strong>
-                  <p>Know exactly which CV version was sent to each company.</p>
-                </div>
+          <div className="auth-hero">
+            <div className="auth-product">
+              <div className="auth-product-copy">
+                <p className="auth-kicker">Private workspace</p>
+                <h2>Clarity for every step forward.</h2>
+                <p>
+                  Track applications, follow-ups, and outcomes in one private,
+                  thoughtfully designed workspace.
+                </p>
               </div>
 
-              <div className="auth-workflow-item">
-                <span>03</span>
-                <div>
-                  <strong>Follow up on time</strong>
-                  <p>See overdue, due today, and upcoming actions before they slip.</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="auth-trust-row">
-              <span>Passwordless OTP</span>
-              <span>User-scoped data</span>
-              <span>HTTPS ready</span>
-            </div>
-          </div>
-
-          <div className="auth-card">
-            <div className="auth-copy">
-              <p className="auth-kicker">Secure sign in</p>
-              <h2>Passwordless login</h2>
-              <p>
-                Enter your email and verify with a one-time code to access your
-                private application tracker.
-              </p>
-            </div>
-
-            {step === "email" ? (
-              <form className="auth-form" onSubmit={handleRequestOTP}>
-                <label htmlFor="auth-email">Email address</label>
-                <input
-                  id="auth-email"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  autoComplete="email"
-                  onChange={(event) => setEmail(event.target.value)}
-                />
-
-                <button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? "Sending..." : "Send verification code"}
-                </button>
-              </form>
-            ) : (
-              <form className="auth-form" onSubmit={handleVerifyOTP}>
-                <div className="auth-form-header">
+              <div className="auth-workflow" aria-label="JobOps workflow">
+                <div className="auth-workflow-item">
+                  <span aria-hidden="true">01</span>
                   <div>
-                    <label htmlFor="auth-otp">Verification code</label>
-                    <p>{normalizedEmail}</p>
+                    <strong>Private by design</strong>
+                    <p>Your data stays yours. Always.</p>
                   </div>
+                </div>
+
+                <div className="auth-workflow-item">
+                  <span aria-hidden="true">02</span>
+                  <div>
+                    <strong>See what matters</strong>
+                    <p>A clean view of progress and next steps.</p>
+                  </div>
+                </div>
+
+                <div className="auth-workflow-item">
+                  <span aria-hidden="true">03</span>
+                  <div>
+                    <strong>Built for momentum</strong>
+                    <p>Small actions today. Better outcomes tomorrow.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="auth-card">
+              <div className="auth-copy">
+                <div className="auth-tabs" aria-hidden="true">
+                  <span className={step === "email" ? "active" : ""}>Email sign in</span>
+                  <span className={step === "otp" ? "active" : ""}>Verify code</span>
+                </div>
+                <p className="auth-kicker">Secure sign in</p>
+                <h2>{step === "email" ? "Welcome back" : "Check your email"}</h2>
+                <p>
+                  {step === "email"
+                    ? "Enter your email and we will send a one-time code to sign in."
+                    : `We sent a verification code to ${normalizedEmail}.`}
+                </p>
+              </div>
+
+              {step === "email" ? (
+                <form className="auth-form" onSubmit={handleRequestOTP}>
+                  <label htmlFor="auth-email">Email address</label>
+                  <input
+                    id="auth-email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    autoComplete="email"
+                    onChange={(event) => setEmail(event.target.value)}
+                  />
+
+                  <button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? "Sending..." : "Send verification code"}
+                  </button>
+                </form>
+              ) : (
+                <form className="auth-form" onSubmit={handleVerifyOTP}>
+                  <div className="auth-form-header">
+                    <div>
+                      <label htmlFor="auth-otp">Verification code</label>
+                      <p>{normalizedEmail}</p>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="auth-link-button"
+                      onClick={() => {
+                        setStep("email");
+                        setOtp("");
+                        setError("");
+                        setMessage("");
+                        setDebugOtp("");
+                      }}
+                    >
+                      Change
+                    </button>
+                  </div>
+
+                  <input
+                    id="auth-otp"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="6-digit code"
+                    value={otp}
+                    autoComplete="one-time-code"
+                    maxLength={6}
+                    onChange={(event) => setOtp(event.target.value)}
+                  />
+
+                  <button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? "Verifying..." : "Verify and continue"}
+                  </button>
 
                   <button
                     type="button"
-                    className="auth-link-button"
-                    onClick={() => {
-                      setStep("email");
-                      setOtp("");
-                      setError("");
-                      setMessage("");
-                      setDebugOtp("");
-                    }}
+                    className="auth-secondary-button"
+                    disabled={isSubmitting}
+                    onClick={handleRequestOTP}
                   >
-                    Change
+                    Resend code
                   </button>
+                </form>
+              )}
+
+              {message && <div className="auth-message">{message}</div>}
+              {error && <div className="auth-error">{error}</div>}
+
+              {debugOtp && (
+                <div className="auth-debug">
+                  <span>Dev OTP:</span>
+                  <strong>{debugOtp}</strong>
                 </div>
+              )}
 
-                <input
-                  id="auth-otp"
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="6-digit code"
-                  value={otp}
-                  autoComplete="one-time-code"
-                  maxLength={6}
-                  onChange={(event) => setOtp(event.target.value)}
-                />
-
-                <button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? "Verifying..." : "Verify and continue"}
-                </button>
-
-                <button
-                  type="button"
-                  className="auth-secondary-button"
-                  disabled={isSubmitting}
-                  onClick={handleRequestOTP}
-                >
-                  Resend code
-                </button>
-              </form>
-            )}
-
-            {message && <div className="auth-message">{message}</div>}
-            {error && <div className="auth-error">{error}</div>}
-
-            {debugOtp && (
-              <div className="auth-debug">
-                <span>Dev OTP:</span>
-                <strong>{debugOtp}</strong>
+              <div className="auth-footer">
+                <span>Private by default.</span>
+                <span>Session cookie protected.</span>
               </div>
-            )}
+            </div>
+          </div>
 
-            <div className="auth-footer">
-              <span>Private by default.</span>
-              <span>Session cookie protected.</span>
+          <div className="auth-dashboard-preview" aria-hidden="true">
+            <aside className="auth-preview-sidebar">
+              <div className="auth-preview-brand">
+                <img src={jobopsLogo} alt="" />
+                <span>JobOps Tracker</span>
+              </div>
+              <span className="active">Overview</span>
+              <span>Applications</span>
+              <span>Follow-ups</span>
+              <span>CV Versions</span>
+              <span>Analytics</span>
+            </aside>
+
+            <div className="auth-preview-main">
+              <div className="auth-preview-header">
+                <div>
+                  <h3>Good morning, Kris</h3>
+                  <p>Here is what is happening with your job search.</p>
+                </div>
+                <button type="button">New application</button>
+              </div>
+
+              <div className="auth-preview-metrics">
+                <article><span>Applications</span><strong>36</strong></article>
+                <article><span>Interviews</span><strong>8</strong></article>
+                <article><span>Follow-ups</span><strong>14</strong></article>
+                <article><span>Response rate</span><strong>28%</strong></article>
+              </div>
+
+              <div className="auth-preview-lists">
+                <div>
+                  <h4>Recent applications</h4>
+                  <p>Senior Product Manager <span>Interview</span></p>
+                  <p>Product Operations Lead <span>Follow-up</span></p>
+                  <p>Growth Manager <span>Applied</span></p>
+                </div>
+                <div>
+                  <h4>Follow-up due</h4>
+                  <p>Technical interview follow-up <span>Today</span></p>
+                  <p>Recruiter check-in <span>Tomorrow</span></p>
+                  <p>Case study submission <span>May 19</span></p>
+                </div>
+              </div>
             </div>
           </div>
         </section>
