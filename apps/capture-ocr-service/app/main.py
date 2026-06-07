@@ -3,6 +3,7 @@ from fastapi import FastAPI
 
 from app.extract import extract_capture_fields
 from app.ocr import extract_screenshot_text
+from app.ocr_policy import should_run_screenshot_ocr
 
 
 class AnalyzeRequest(BaseModel):
@@ -23,7 +24,15 @@ def health():
 
 @app.post("/analyze")
 def analyze(request: AnalyzeRequest):
-    ocr_text = extract_screenshot_text(request.screenshot_base64)
+    ocr_text = ""
+    if should_run_screenshot_ocr(
+        selected_text=request.selected_text,
+        dom_text=request.dom_text,
+        title=request.title,
+        screenshot_base64=request.screenshot_base64,
+    ):
+        ocr_text = extract_screenshot_text(request.screenshot_base64)
+
     return extract_capture_fields(
         url=request.url,
         title=request.title,

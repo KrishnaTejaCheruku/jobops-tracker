@@ -17,6 +17,25 @@ type Config struct {
 	CaptureMaxBytes       int64
 }
 
+func (c Config) IsCORSOriginAllowed(origin string) bool {
+	trimmedOrigin := strings.TrimSpace(origin)
+	if trimmedOrigin == "" {
+		return false
+	}
+
+	if strings.HasPrefix(trimmedOrigin, "chrome-extension://") {
+		return true
+	}
+
+	for _, allowedOrigin := range c.CORSAllowedOrigins {
+		if trimmedOrigin == allowedOrigin {
+			return true
+		}
+	}
+
+	return false
+}
+
 func Load() Config {
 	appEnv := getEnv("APP_ENV", "development")
 

@@ -101,7 +101,8 @@ describe("job capture flow", () => {
 
     cy.get(".capture-panel").within(() => {
       cy.contains("h3", "Browser extension").should("be.visible");
-      cy.contains("Extension capture coming soon").should("be.visible");
+      cy.contains("apps/browser-extension").should("be.visible");
+      cy.contains("https://jobops.me/api").should("be.visible");
 
     });
 
