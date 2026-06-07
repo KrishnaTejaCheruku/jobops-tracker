@@ -110,7 +110,10 @@ describe("application management", () => {
     cy.contains("Site Reliability Engineer").should("be.visible");
     cy.contains("Reliability Labs").should("be.visible");
     cy.contains("Showing 1 of 1 result").should("be.visible");
-    cy.contains("Pipeline workspace").parent().find("select").select("Analytics");
+    cy.contains("Pipeline workspace")
+      .parents(".pipeline-navigation")
+      .find("select")
+      .select("Analytics");
     cy.contains("High Priority").parent().contains("1").should("be.visible");
     cy.contains("Total").parent().contains("1").should("be.visible");
 
