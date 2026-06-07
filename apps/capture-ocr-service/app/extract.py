@@ -116,6 +116,22 @@ def _first_job_like_line(lines: list[str]) -> str:
         "designer",
         "lead",
         "intern",
+        "scientist",
+        "researcher",
+        "research associate",
+        "research assistant",
+        "lab technician",
+        "laboratory technician",
+        "clinical research",
+        "bioinformatics",
+        "biologist",
+        "chemist",
+        "physicist",
+        "technologist",
+        "technician",
+        "principal investigator",
+        "postdoctoral",
+        "postdoc",
     )
     for line in lines:
         lower = line.lower()

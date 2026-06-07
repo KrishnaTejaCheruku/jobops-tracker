@@ -123,17 +123,24 @@ a:hover {
   gap: 8px;
 }
 
-.dashboard-nav a {
+.dashboard-nav a,
+.dashboard-nav button {
   border-radius: 10px;
   color: var(--text-muted);
   padding: 12px 14px;
+  border: 0;
+  background: transparent;
+  font: inherit;
   font-size: 14px;
   font-weight: 850;
   text-decoration: none;
+  text-align: left;
+  cursor: pointer;
 }
 
 .dashboard-nav a.active,
-.dashboard-nav a:hover {
+.dashboard-nav a:hover,
+.dashboard-nav button:hover {
   background: var(--primary-soft);
   color: var(--primary);
 }
@@ -290,6 +297,26 @@ a:hover {
   grid-template-columns: minmax(0, 1fr) minmax(280px, 430px);
 }
 
+.pipeline-view {
+  margin-bottom: 20px;
+}
+
+.pipeline-view-snapshot {
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 430px);
+}
+
+.pipeline-view-breakdown {
+  grid-template-columns: minmax(320px, 430px) minmax(0, 1fr);
+}
+
+.pipeline-view-analytics {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.pipeline-view-analytics .analytics-card {
+  margin-bottom: 0;
+}
+
 .dashboard-card {
   min-width: 0;
   border: 1px solid var(--border-soft);
@@ -297,6 +324,42 @@ a:hover {
   background: var(--surface);
   box-shadow: var(--shadow-card);
   padding: 22px;
+}
+
+.pipeline-navigation {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.pipeline-navigation h2 {
+  margin: 4px 0 0;
+  font-size: 22px;
+}
+
+.pipeline-navigation label {
+  display: grid;
+  gap: 6px;
+  min-width: 220px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.pipeline-navigation select {
+  min-height: 42px;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text-main);
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 850;
+  text-transform: none;
 }
 
 .dashboard-section-row {
@@ -323,13 +386,16 @@ a:hover {
   display: grid;
   grid-template-columns: repeat(4, minmax(150px, 1fr));
   gap: 16px;
+  align-items: stretch;
 }
 
 .pipeline-tile {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
   min-height: 132px;
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-md);
-  background: linear-gradient(180deg, #ffffff, var(--surface-soft));
+  background: linear-gradient(180deg, var(--surface), var(--surface-soft));
   padding: 18px;
 }
 
@@ -340,8 +406,10 @@ a:hover {
 
 .pipeline-tile strong {
   display: block;
-  margin: 10px 0 18px;
+  align-self: center;
+  margin: 10px 0 12px;
   font-size: 34px;
+  line-height: 1;
 }
 
 .pipeline-tile p {
@@ -361,6 +429,7 @@ a:hover {
   grid-template-columns: 150px minmax(0, 1fr);
   gap: 22px;
   align-items: center;
+  min-height: 172px;
 }
 
 .donut-chart {
@@ -377,7 +446,7 @@ a:hover {
   display: grid;
   place-items: center;
   border-radius: 999px;
-  background: white;
+  background: var(--surface);
 }
 
 .donut-chart strong {
@@ -426,6 +495,17 @@ a:hover {
 .breakdown-list strong {
   color: var(--text-muted);
   font-size: 13px;
+}
+
+.breakdown-list p {
+  min-height: 32px;
+  border-bottom: 1px solid var(--border-soft);
+  padding-bottom: 8px;
+}
+
+.breakdown-list p:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
 }
 
 .applications-over-time svg {
@@ -520,9 +600,14 @@ a:hover {
 .dashboard-link {
   display: inline-flex;
   margin-top: 18px;
+  border: 0;
+  background: transparent;
+  padding: 0;
   color: var(--primary);
+  font: inherit;
   font-size: 13px;
   font-weight: 950;
+  cursor: pointer;
 }
 
 .cv-summary-list {
@@ -1459,7 +1544,9 @@ td small {
 
   .dashboard-grid-top,
   .dashboard-grid-middle,
-  .dashboard-grid-lower {
+  .dashboard-grid-lower,
+  .pipeline-view-snapshot,
+  .pipeline-view-breakdown {
     grid-template-columns: 1fr;
   }
 
@@ -1523,8 +1610,18 @@ td small {
   .pipeline-snapshot-grid,
   .breakdown-content,
   .dashboard-grid,
+  .pipeline-navigation,
   .cv-summary-list article {
     grid-template-columns: 1fr;
+  }
+
+  .pipeline-navigation {
+    display: grid;
+    align-items: start;
+  }
+
+  .pipeline-navigation label {
+    min-width: 0;
   }
 
   .breakdown-content {
@@ -1826,6 +1923,23 @@ td small {
 }
 
 html[data-theme="dark"] {
+  --page-bg: #070b14;
+  --surface: #111827;
+  --surface-soft: #172033;
+  --border-soft: rgba(148, 163, 184, 0.22);
+  --text-main: #f8fafc;
+  --text-muted: #a7b0c0;
+  --text-soft: #7f8ba3;
+  --primary: #60a5fa;
+  --primary-dark: #3b82f6;
+  --primary-soft: rgba(96, 165, 250, 0.16);
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --info: #93c5fd;
+  --shadow-card: 0 18px 50px rgba(0, 0, 0, 0.24);
+  --shadow-float: 0 24px 70px rgba(0, 0, 0, 0.34);
+
   --bg: #070b14;
   --card: #111827;
   --card-soft: #172033;
@@ -1910,6 +2024,72 @@ textarea,
 
 html[data-theme="dark"] .theme-toggle {
   background: rgba(17, 24, 39, 0.88);
+}
+
+html[data-theme="dark"] .dashboard-shell {
+  background: var(--page-bg);
+  color: var(--text-main);
+}
+
+html[data-theme="dark"] .dashboard-sidebar {
+  background: rgba(17, 24, 39, 0.9);
+  border-color: var(--border-soft);
+}
+
+html[data-theme="dark"] .dashboard-helper-card {
+  background: linear-gradient(145deg, #111827, #172033);
+}
+
+html[data-theme="dark"] .dashboard-card,
+html[data-theme="dark"] .pipeline-navigation,
+html[data-theme="dark"] .pipeline-tile {
+  background: var(--surface);
+  border-color: var(--border-soft);
+  color: var(--text-main);
+}
+
+html[data-theme="dark"] .pipeline-tile {
+  background: linear-gradient(180deg, var(--surface), var(--surface-soft));
+}
+
+html[data-theme="dark"] .donut-chart > div,
+html[data-theme="dark"] .dashboard-search input,
+html[data-theme="dark"] .dashboard-icon-button,
+html[data-theme="dark"] .dashboard-avatar,
+html[data-theme="dark"] .pipeline-navigation select {
+  background: #0b1220;
+  border-color: var(--border-strong);
+  color: var(--text-main);
+}
+
+html[data-theme="dark"] .pipeline-tile span,
+html[data-theme="dark"] .pipeline-tile p,
+html[data-theme="dark"] .dashboard-card .section-kicker,
+html[data-theme="dark"] .dashboard-greeting p,
+html[data-theme="dark"] .dashboard-list p,
+html[data-theme="dark"] .chart-labels,
+html[data-theme="dark"] .breakdown-list strong,
+html[data-theme="dark"] .dashboard-section-row > span,
+html[data-theme="dark"] .pipeline-navigation label {
+  color: var(--text-muted);
+}
+
+html[data-theme="dark"] .breakdown-list span,
+html[data-theme="dark"] .dashboard-list strong,
+html[data-theme="dark"] .cv-summary-list strong,
+html[data-theme="dark"] .dashboard-sidebar-brand strong,
+html[data-theme="dark"] .dashboard-sidebar-user strong,
+html[data-theme="dark"] .dashboard-helper-card strong,
+html[data-theme="dark"] .dashboard-greeting h1,
+html[data-theme="dark"] .pipeline-navigation h2 {
+  color: var(--text-main);
+}
+
+html[data-theme="dark"] .applications-over-time svg {
+  background:
+    linear-gradient(to bottom, transparent 24%, rgba(148, 163, 184, 0.18) 25%, transparent 26%),
+    linear-gradient(to bottom, transparent 49%, rgba(148, 163, 184, 0.18) 50%, transparent 51%),
+    linear-gradient(to bottom, transparent 74%, rgba(148, 163, 184, 0.18) 75%, transparent 76%);
 }
 
 html[data-theme="dark"] .hero-meta span {

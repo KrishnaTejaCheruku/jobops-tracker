@@ -65,7 +65,7 @@ function percentage(part, total) {
   return Math.round((part / total) * 100);
 }
 
-function DashboardSidebar({ user }) {
+function DashboardSidebar({ user, onPipelineViewChange }) {
   return (
     <aside className="dashboard-sidebar">
       <div className="dashboard-sidebar-brand">
@@ -75,11 +75,11 @@ function DashboardSidebar({ user }) {
 
       <nav className="dashboard-nav" aria-label="Dashboard navigation">
         <a href="#dashboard-overview" className="active">Dashboard</a>
-        <a href="#applications">Pipeline</a>
+        <button type="button" onClick={() => onPipelineViewChange("snapshot")}>Pipeline</button>
         <a href="#follow-ups">Follow-ups</a>
         <a href="#applications">Interviews</a>
         <a href="#cv-versions">CV Versions</a>
-        <a href="#analytics">Analytics</a>
+        <button type="button" onClick={() => onPipelineViewChange("analytics")}>Analytics</button>
         <a href="#capture">Settings</a>
       </nav>
 
@@ -100,6 +100,25 @@ function DashboardSidebar({ user }) {
   );
 }
 
+function PipelineNavigation({ view, onViewChange }) {
+  return (
+    <section className="dashboard-card pipeline-navigation" id="pipeline">
+      <div>
+        <p className="section-kicker">Pipeline</p>
+        <h2>Pipeline workspace</h2>
+      </div>
+      <label>
+        <span>View</span>
+        <select value={view} onChange={(event) => onViewChange(event.target.value)}>
+          <option value="snapshot">Snapshot</option>
+          <option value="breakdown">Breakdown</option>
+          <option value="analytics">Analytics</option>
+        </select>
+      </label>
+    </section>
+  );
+}
+
 function PipelineSnapshot({ analytics, summary, followUps }) {
   const active = analytics?.active_applications ?? summary.active;
   const offers = analytics?.offers ?? 0;
@@ -111,7 +130,7 @@ function PipelineSnapshot({ analytics, summary, followUps }) {
   ];
 
   return (
-    <section className="dashboard-card pipeline-snapshot">
+    <section className="dashboard-card pipeline-snapshot" id="pipeline-snapshot">
       <div className="dashboard-section-heading">
         <p className="section-kicker">Pipeline snapshot</p>
       </div>
@@ -157,7 +176,7 @@ function PipelineBreakdown({ summary, followUps }) {
     : "#eef2f7";
 
   return (
-    <section className="dashboard-card pipeline-breakdown">
+    <section className="dashboard-card pipeline-breakdown" id="pipeline-breakdown">
       <p className="section-kicker">Pipeline breakdown</p>
       <div className="breakdown-content">
         <div className="donut-chart" style={{ background: gradient }}>
@@ -378,6 +397,10 @@ function detailsToFieldErrors(details = []) {
 }
 
 function getInitialTheme() {
+  if (typeof window === "undefined") {
+    return "light";
+  }
+
   const savedTheme = window.localStorage.getItem("jobops-theme");
 
   if (savedTheme === "dark" || savedTheme === "light") {
@@ -424,6 +447,7 @@ function AppContent({ user, onLogout, isLoggingOut }) {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [csvImportLoading, setCSVImportLoading] = useState(false);
+  const [pipelineView, setPipelineView] = useState("snapshot");
 
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -436,8 +460,12 @@ function AppContent({ user, onLogout, isLoggingOut }) {
   const isEditing = editingId !== null;
 
   useEffect(() => {
+    if (typeof document === "undefined" || !document.documentElement) {
+      return;
+    }
+
     document.documentElement.dataset.theme = theme;
-    window.localStorage.setItem("jobops-theme", theme);
+    window.localStorage?.setItem("jobops-theme", theme);
   }, [theme]);
 
   const summary = useMemo(() => {
@@ -925,9 +953,19 @@ function AppContent({ user, onLogout, isLoggingOut }) {
     setHistoryLoading(false);
   }
 
+  function changePipelineView(view) {
+    setPipelineView(view);
+    window.requestAnimationFrame(() => {
+      document.querySelector("#pipeline")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  }
+
   return (
     <main className="dashboard-shell">
-      <DashboardSidebar user={user} />
+      <DashboardSidebar user={user} onPipelineViewChange={changePipelineView} />
 
       <section className="dashboard-main" id="dashboard-overview">
         <header className="dashboard-topbar">
@@ -991,11 +1029,34 @@ function AppContent({ user, onLogout, isLoggingOut }) {
 
         <Notice message={message} error={error} />
 
-        <section className="dashboard-grid dashboard-grid-top">
-          <div className="dashboard-grid-wide">
-            <PipelineSnapshot analytics={analytics} summary={summary} followUps={followUps} />
-          </div>
-          <PipelineBreakdown summary={summary} followUps={followUps} />
+        <PipelineNavigation view={pipelineView} onViewChange={setPipelineView} />
+
+        <section className={`dashboard-grid pipeline-view pipeline-view-${pipelineView}`}>
+          {pipelineView === "snapshot" && (
+            <>
+              <div className="dashboard-grid-wide">
+                <PipelineSnapshot analytics={analytics} summary={summary} followUps={followUps} />
+              </div>
+              <PipelineBreakdown summary={summary} followUps={followUps} />
+            </>
+          )}
+
+          {pipelineView === "breakdown" && (
+            <>
+              <PipelineBreakdown summary={summary} followUps={followUps} />
+              <ApplicationsOverTime applications={applications} />
+            </>
+          )}
+
+          {pipelineView === "analytics" && (
+            <div id="analytics">
+              <AnalyticsDashboard
+                analytics={analytics}
+                loading={analyticsLoading}
+                onRefresh={refreshAnalytics}
+              />
+            </div>
+          )}
         </section>
 
         <section className="dashboard-grid dashboard-grid-middle">
@@ -1010,19 +1071,17 @@ function AppContent({ user, onLogout, isLoggingOut }) {
             <p className="section-kicker">Focus</p>
             <h2>Stay ahead in your search</h2>
             <p>Consistent follow-ups and tailored CVs make all the difference.</p>
-            <a href="#analytics" className="dashboard-link">View analytics -&gt;</a>
+            <button
+              type="button"
+              className="dashboard-link"
+              onClick={() => changePipelineView("analytics")}
+            >
+              View analytics -&gt;
+            </button>
           </section>
         </section>
 
         <section className="dashboard-workbench">
-          <div id="analytics">
-            <AnalyticsDashboard
-              analytics={analytics}
-              loading={analyticsLoading}
-              onRefresh={refreshAnalytics}
-            />
-          </div>
-
           <CSVDataPanel
             exportUrl={getApplicationsExportURL()}
             loading={csvImportLoading}
