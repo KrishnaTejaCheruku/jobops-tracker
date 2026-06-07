@@ -58,6 +58,13 @@ function analyticsFor(application) {
   };
 }
 
+function openPipelineAnalytics() {
+  cy.contains("Pipeline workspace")
+    .parents(".pipeline-navigation")
+    .find("select")
+    .select("Analytics");
+}
+
 describe("user isolation", () => {
   it("renders only the current user's applications and analytics", () => {
     cy.stubAuthSession({ id: 1, email: "user-a@example.com" });
@@ -73,6 +80,7 @@ describe("user isolation", () => {
     cy.contains("User A Platform Engineer").should("be.visible");
     cy.contains("Tenant A Cloud").should("be.visible");
     cy.contains("User B DevOps Engineer").should("not.exist");
+    openPipelineAnalytics();
     cy.contains("All tracked applications").parent().contains("100").should("be.visible");
   });
 
@@ -90,6 +98,7 @@ describe("user isolation", () => {
     cy.contains("User B DevOps Engineer").should("be.visible");
     cy.contains("Tenant B Systems").should("be.visible");
     cy.contains("User A Platform Engineer").should("not.exist");
+    openPipelineAnalytics();
     cy.contains("All tracked applications").parent().contains("100").should("be.visible");
   });
 });
