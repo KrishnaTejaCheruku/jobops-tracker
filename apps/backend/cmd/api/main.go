@@ -80,6 +80,11 @@ func main() {
 
 	dashboardRepo := repository.NewDashboardRepository(db)
 	dashboardHandler := handlers.NewDashboardHandler(dashboardRepo)
+	captureAnalyzeHandler := handlers.NewCaptureAnalyzeHandler(
+		cfg.CaptureAnalyzeEnabled,
+		cfg.CaptureOCRURL,
+		cfg.CaptureMaxBytes,
+	)
 
 	router.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
@@ -97,6 +102,7 @@ func main() {
 	router.POST("/auth/verify-otp", authHandler.VerifyOTP)
 	router.GET("/auth/me", authHandler.Me)
 	router.POST("/auth/logout", authHandler.Logout)
+	router.POST("/capture/analyze", captureAnalyzeHandler.Analyze)
 
 	protected := router.Group("/")
 	protected.Use(authMiddleware)

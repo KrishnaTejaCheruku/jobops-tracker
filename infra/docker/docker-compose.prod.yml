@@ -46,14 +46,37 @@ services:
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       SMTP_FROM: ${SMTP_FROM:-}
       SMTP_FROM_NAME: ${SMTP_FROM_NAME:-JobOps Tracker}
+      CAPTURE_ANALYZE_ENABLED: ${CAPTURE_ANALYZE_ENABLED:-true}
+      CAPTURE_OCR_URL: ${CAPTURE_OCR_URL:-http://capture-ocr:8090}
+      CAPTURE_MAX_BYTES: ${CAPTURE_MAX_BYTES:-6000000}
       DATABASE_URL: postgres://${POSTGRES_USER:-jobops}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-jobops}?sslmode=disable
     depends_on:
       postgres:
         condition: service_healthy
+      capture-ocr:
+        condition: service_started
     networks:
       - jobops-net
     expose:
       - "8000"
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  capture-ocr:
+    image: ${CAPTURE_OCR_IMAGE:-jobops-capture-ocr:latest}
+    build:
+      context: ../../apps/capture-ocr-service
+      dockerfile: Dockerfile
+    environment:
+      APP_ENV: production
+    expose:
+      - "8090"
+    networks:
+      - jobops-net
     restart: unless-stopped
     logging:
       driver: json-file

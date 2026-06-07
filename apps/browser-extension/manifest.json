@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "JobOps Capture",
+  "description": "Capture visible job pages and send them to JobOps for OCR-assisted review.",
+  "version": "0.1.0",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "JobOps Capture"
+  },
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "tabs",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://jobops.me/*",
+    "http://localhost:8000/*",
+    "http://localhost:5173/*",
+    "https://www.linkedin.com/*",
+    "https://*.linkedin.com/*",
+    "https://*.indeed.com/*",
+    "https://*.stepstone.*/*",
+    "https://*.greenhouse.io/*",
+    "https://jobs.lever.co/*",
+    "https://*.myworkdayjobs.com/*",
+    "<all_urls>"
+  ]
+}

@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>JobOps Capture</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main class="popup">
+      <h1>JobOps Capture</h1>
+      <label>
+        <span>JobOps app URL</span>
+        <input id="app-url" type="url" autocomplete="off">
+      </label>
+      <label>
+        <span>JobOps API URL</span>
+        <input id="api-url" type="url" autocomplete="off">
+      </label>
+      <button id="capture-button" type="button">Capture</button>
+      <p id="status" role="status" aria-live="polite"></p>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>

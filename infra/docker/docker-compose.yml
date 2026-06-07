@@ -28,12 +28,31 @@ services:
       APP_ENV: development
       BACKEND_PORT: 8000
       CORS_ALLOWED_ORIGINS: http://localhost:5173,http://localhost:3000,http://localhost:8080,http://localhost:8081,http://localhost
+      CAPTURE_ANALYZE_ENABLED: ${CAPTURE_ANALYZE_ENABLED:-true}
+      CAPTURE_OCR_URL: ${CAPTURE_OCR_URL:-http://capture-ocr:8090}
+      CAPTURE_MAX_BYTES: ${CAPTURE_MAX_BYTES:-6000000}
       DATABASE_URL: postgresql://jobops:jobops_dev_password@postgres:5432/jobops
     ports:
       - "8000:8000"
     depends_on:
       postgres:
         condition: service_healthy
+      capture-ocr:
+        condition: service_started
+    networks:
+      - jobops-net
+
+  capture-ocr:
+    build:
+      context: ../../apps/capture-ocr-service
+      dockerfile: Dockerfile
+    container_name: jobops-capture-ocr
+    environment:
+      APP_ENV: development
+    expose:
+      - "8090"
+    ports:
+      - "8090:8090"
     networks:
       - jobops-net
 
