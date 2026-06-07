@@ -90,7 +90,7 @@ def _extract_title_company_location(*, title: str, selected_text: str, raw_text:
         )
 
     lines = [_clean_field(line) for line in raw_text.splitlines()]
-    lines = [line for line in lines if line]
+    lines = [line for line in lines if line and not _is_noise_line(line)]
     first_lines = lines[:8]
 
     job_title = _first_job_like_line(first_lines)
@@ -142,7 +142,12 @@ def _first_job_like_line(lines: list[str]) -> str:
 
 def _first_company_like_line(lines: list[str], job_title: str) -> str:
     for line in lines:
-        if line != job_title and 2 <= len(line) <= 80 and not _looks_like_location(line):
+        if (
+            line != job_title
+            and 2 <= len(line) <= 80
+            and not _looks_like_location(line)
+            and not _looks_like_job_title(line)
+        ):
             return line
     return ""
 
@@ -164,6 +169,54 @@ def _first_location_like_line(lines: list[str]) -> str:
 def _looks_like_location(value: str) -> bool:
     lower = value.lower()
     return any(token in lower for token in ("germany", "deutschland", "hamburg", "berlin", "munich", "remote"))
+
+
+def _looks_like_job_title(value: str) -> bool:
+    lower = value.lower()
+    return any(
+        token in lower
+        for token in (
+            "engineer",
+            "developer",
+            "manager",
+            "analyst",
+            "architect",
+            "consultant",
+            "scientist",
+            "research",
+            "technician",
+            "specialist",
+            "intern",
+        )
+    )
+
+
+def _is_noise_line(value: str) -> bool:
+    lower = value.lower().strip()
+    if not lower:
+        return True
+
+    exact_noise = {
+        "skip to search",
+        "search",
+        "home",
+        "my network",
+        "jobs",
+        "messaging",
+        "notifications",
+        "profile",
+        "settings",
+        "open menu",
+        "show more",
+        "promoted",
+    }
+    if lower in exact_noise:
+        return True
+
+    return bool(
+        re.match(r"^\d+\s+notifications?\s+total$", lower)
+        or re.match(r"^\d+\s+new\s+notifications?$", lower)
+    )
 
 
 def _extract_salary(raw_text: str) -> str:
