@@ -118,6 +118,7 @@ describe("authenticated dashboard", () => {
     cy.contains("devops@example.com").should("be.visible");
     cy.contains("Good morning, devops").should("be.visible");
     cy.contains("Pipeline snapshot").should("be.visible");
+    cy.contains("Pipeline workspace").parent().find("select").select("Analytics");
     cy.contains("Dashboard Analytics").should("be.visible");
     cy.contains("Platform Engineer").should("be.visible");
     cy.contains("Acme Cloud").should("be.visible");

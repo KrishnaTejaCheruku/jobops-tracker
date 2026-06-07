@@ -397,6 +397,10 @@ function detailsToFieldErrors(details = []) {
 }
 
 function getInitialTheme() {
+  if (typeof window === "undefined") {
+    return "light";
+  }
+
   const savedTheme = window.localStorage.getItem("jobops-theme");
 
   if (savedTheme === "dark" || savedTheme === "light") {
@@ -456,8 +460,12 @@ function AppContent({ user, onLogout, isLoggingOut }) {
   const isEditing = editingId !== null;
 
   useEffect(() => {
+    if (typeof document === "undefined" || !document.documentElement) {
+      return;
+    }
+
     document.documentElement.dataset.theme = theme;
-    window.localStorage.setItem("jobops-theme", theme);
+    window.localStorage?.setItem("jobops-theme", theme);
   }, [theme]);
 
   const summary = useMemo(() => {
