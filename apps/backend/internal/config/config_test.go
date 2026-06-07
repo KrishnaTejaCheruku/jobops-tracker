@@ -31,6 +31,34 @@ func TestLoadParsesCORSAllowedOrigins(t *testing.T) {
 	}
 }
 
+func TestConfigAllowsConfiguredCORSOrigins(t *testing.T) {
+	cfg := Config{
+		CORSAllowedOrigins: []string{
+			"https://jobops.me",
+			"https://www.jobops.me",
+		},
+	}
+
+	if !cfg.IsCORSOriginAllowed("https://jobops.me") {
+		t.Fatal("expected configured origin to be allowed")
+	}
+	if cfg.IsCORSOriginAllowed("https://evil.example") {
+		t.Fatal("expected unconfigured web origin to be rejected")
+	}
+}
+
+func TestConfigAllowsChromeExtensionCORSOrigins(t *testing.T) {
+	cfg := Config{
+		CORSAllowedOrigins: []string{
+			"https://jobops.me",
+		},
+	}
+
+	if !cfg.IsCORSOriginAllowed("chrome-extension://abcdefghijklmnopabcdefghijklmnop") {
+		t.Fatal("expected Chrome extension origin to be allowed")
+	}
+}
+
 func TestLoadUsesCaptureAnalyzeDevelopmentDefaults(t *testing.T) {
 	t.Setenv("APP_ENV", "development")
 	t.Setenv("CAPTURE_ANALYZE_ENABLED", "")

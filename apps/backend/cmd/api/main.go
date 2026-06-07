@@ -38,7 +38,7 @@ func main() {
 	router.Use(metricsRegistry.Middleware())
 
 	router.Use(cors.New(cors.Config{
-		AllowOrigins: cfg.CORSAllowedOrigins,
+		AllowOriginFunc: cfg.IsCORSOriginAllowed,
 		AllowMethods: []string{
 			http.MethodGet,
 			http.MethodPost,
