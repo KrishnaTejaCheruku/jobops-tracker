@@ -1176,8 +1176,8 @@ function AppContent({ user, onLogout, isLoggingOut }) {
                 <p className="section-kicker">Capture job</p>
                 <h2>Add a role from another page</h2>
                 <p className="muted">
-                  Start with a URL, import CSV data, or prepare for the upcoming
-                  browser extension capture flow.
+                  Start with a URL, import CSV data, or use the browser extension
+                  to capture the visible job page with OCR.
                 </p>
               </div>
 
@@ -1219,12 +1219,12 @@ function AppContent({ user, onLogout, isLoggingOut }) {
               <article>
                 <h3>Browser extension</h3>
                 <p>
-                  The old browser-bookmark flow has been removed. The next capture version will
-                  use a browser extension that can capture the visible job page,
-                  analyze it with OCR, and send the reviewed result back to JobOps.
+                  Load the Chrome extension from <strong>apps/browser-extension</strong>.
+                  It captures the visible job page, analyzes it with OCR, and opens
+                  JobOps with a reviewable capture payload.
                 </p>
                 <div className="capture-extension-placeholder">
-                  Extension capture coming soon
+                  Set app URL to https://jobops.me and API URL to https://jobops.me/api
                 </div>
               </article>
             </div>
