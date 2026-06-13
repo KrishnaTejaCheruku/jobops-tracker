@@ -128,4 +128,86 @@ describe("authenticated dashboard", () => {
     cy.contains("High").should("be.visible");
     cy.contains("Showing 1 of 1 result").should("be.visible");
   });
+
+  it("uses dashboard analytics totals instead of the paginated applications page", () => {
+    const visibleApplications = Array.from({ length: 10 }, (_, index) => ({
+      id: index + 1,
+      job_title: `Visible Role ${index + 1}`,
+      company_name: "Paged Company",
+      source: "LinkedIn",
+      job_url: "",
+      location: "Remote",
+      work_mode: "Remote",
+      status: "Applied",
+      cv_version: "",
+      cv_version_id: 0,
+      salary_range: "",
+      follow_up_date: "",
+      recruiter_name: "",
+      recruiter_email: "",
+      job_description: "",
+      priority: "Medium",
+      notes: "",
+      applied_date: "2026-06-01",
+    }));
+
+    cy.intercept("GET", `${apiBaseUrl}/auth/me`, {
+      statusCode: 200,
+      body: { user: testUser },
+    }).as("currentUser");
+
+    cy.intercept("GET", `${apiBaseUrl}/applications*`, {
+      statusCode: 200,
+      body: {
+        ...applicationsResponse,
+        items: visibleApplications,
+        total_items: 32,
+        total_pages: 4,
+      },
+    }).as("applications");
+
+    cy.intercept("GET", `${apiBaseUrl}/cv-versions`, {
+      statusCode: 200,
+      body: [],
+    }).as("cvVersions");
+
+    cy.intercept("GET", `${apiBaseUrl}/dashboard/analytics`, {
+      statusCode: 200,
+      body: {
+        ...analyticsResponse,
+        total_applications: 32,
+        active_applications: 28,
+        interviews_total: 3,
+        offers: 1,
+        closed_applications: 4,
+        overdue_follow_ups: 0,
+        due_today_follow_ups: 1,
+        upcoming_follow_ups: 2,
+        pipeline_breakdown: {
+          active: 24,
+          interviews: 3,
+          offers: 1,
+          closed: 4,
+        },
+        applications_over_time: [{ name: "2026-06-01", count: 32 }],
+      },
+    }).as("analytics");
+
+    cy.visit("/");
+    cy.wait(["@currentUser", "@applications", "@cvVersions", "@analytics"]);
+
+    cy.get("#pipeline-snapshot").within(() => {
+      cy.contains("ACTIVE").parent().contains("28").should("be.visible");
+      cy.contains("INTERVIEWS").parent().contains("3").should("be.visible");
+      cy.contains("OFFERS").parent().contains("1").should("be.visible");
+    });
+
+    cy.get("#pipeline-breakdown").within(() => {
+      cy.contains("strong", "32").should("be.visible");
+      cy.contains("Active pipeline").parent().contains("24").should("be.visible");
+      cy.contains("Closed").parent().contains("4").should("be.visible");
+    });
+
+    cy.contains("Showing 10 of 32 results").should("be.visible");
+  });
 });

@@ -1,4 +1,4 @@
-import { CLOSED_STATUSES } from "./constants";
+import { ACTIVE_STATUSES } from "./constants";
 
 export function getDateOnly(value) {
   if (!value) return null;
@@ -32,7 +32,7 @@ export function formatDateTime(value) {
 }
 
 export function isActiveApplication(application) {
-  return !CLOSED_STATUSES.includes(application.status);
+  return ACTIVE_STATUSES.includes(application.status);
 }
 
 export function getFollowUpState(application) {

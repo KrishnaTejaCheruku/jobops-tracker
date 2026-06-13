@@ -16,6 +16,22 @@ func NewDashboardRepository(db *pgxpool.Pool) *DashboardRepository {
 	return &DashboardRepository{DB: db}
 }
 
+var activeDashboardStatuses = map[string]bool{
+	"Saved":       true,
+	"Applied":     true,
+	"In Progress": true,
+	"Interview":   true,
+	"Follow-up":   true,
+	"Offer":       true,
+}
+
+var activePipelineStatuses = map[string]bool{
+	"Saved":       true,
+	"Applied":     true,
+	"In Progress": true,
+	"Follow-up":   true,
+}
+
 func (r *DashboardRepository) GetAnalytics(ctx context.Context, userID int64) (*models.DashboardAnalytics, error) {
 	var analytics models.DashboardAnalytics
 
@@ -23,19 +39,20 @@ func (r *DashboardRepository) GetAnalytics(ctx context.Context, userID int64) (*
 		SELECT
 			COUNT(*) AS total_applications,
 			COUNT(*) FILTER (
-				WHERE status NOT IN ('Offer', 'Rejected', 'Withdrawn')
+				WHERE status IN ('Saved', 'Applied', 'In Progress', 'Interview', 'Follow-up', 'Offer')
 			) AS active_applications,
 			COUNT(*) FILTER (
-				WHERE status IN ('Offer', 'Rejected', 'Withdrawn')
+				WHERE status NOT IN ('Saved', 'Applied', 'In Progress', 'Interview', 'Follow-up', 'Offer')
 			) AS closed_applications,
 			COUNT(*) FILTER (WHERE status = 'Saved') AS saved,
 			COUNT(*) FILTER (WHERE status = 'Applied') AS applied,
+			COUNT(*) FILTER (WHERE status = 'In Progress') AS in_progress,
+			COUNT(*) FILTER (WHERE status = 'Interview') AS interview,
+			COUNT(*) FILTER (WHERE status = 'Follow-up') AS follow_up,
 			COUNT(*) FILTER (WHERE status = 'Recruiter Contacted') AS recruiter_contacted,
 			COUNT(*) FILTER (WHERE status = 'Interview Scheduled') AS interview_scheduled,
 			COUNT(*) FILTER (WHERE status = 'Technical Interview') AS technical_interview,
-			COUNT(*) FILTER (
-				WHERE status IN ('Interview Scheduled', 'Technical Interview')
-			) AS interviews_total,
+			COUNT(*) FILTER (WHERE status = 'Interview') AS interviews_total,
 			COUNT(*) FILTER (WHERE status = 'Offer') AS offers,
 			COUNT(*) FILTER (WHERE status = 'Rejected') AS rejected,
 			COUNT(*) FILTER (WHERE status = 'Ghosted') AS ghosted,
@@ -43,17 +60,17 @@ func (r *DashboardRepository) GetAnalytics(ctx context.Context, userID int64) (*
 			COUNT(*) FILTER (WHERE priority = 'High') AS high_priority,
 			COUNT(*) FILTER (
 				WHERE follow_up_date IS NOT NULL
-				AND status NOT IN ('Offer', 'Rejected', 'Withdrawn')
+				AND status IN ('Saved', 'Applied', 'In Progress', 'Interview', 'Follow-up', 'Offer')
 				AND follow_up_date < CURRENT_DATE
 			) AS overdue_follow_ups,
 			COUNT(*) FILTER (
 				WHERE follow_up_date IS NOT NULL
-				AND status NOT IN ('Offer', 'Rejected', 'Withdrawn')
+				AND status IN ('Saved', 'Applied', 'In Progress', 'Interview', 'Follow-up', 'Offer')
 				AND follow_up_date = CURRENT_DATE
 			) AS due_today_follow_ups,
 			COUNT(*) FILTER (
 				WHERE follow_up_date IS NOT NULL
-				AND status NOT IN ('Offer', 'Rejected', 'Withdrawn')
+				AND status IN ('Saved', 'Applied', 'In Progress', 'Interview', 'Follow-up', 'Offer')
 				AND follow_up_date > CURRENT_DATE
 			) AS upcoming_follow_ups
 		FROM applications
@@ -64,6 +81,9 @@ func (r *DashboardRepository) GetAnalytics(ctx context.Context, userID int64) (*
 		&analytics.ClosedApplications,
 		&analytics.Saved,
 		&analytics.Applied,
+		&analytics.InProgress,
+		&analytics.Interview,
+		&analytics.FollowUp,
 		&analytics.RecruiterContacted,
 		&analytics.InterviewScheduled,
 		&analytics.TechnicalInterview,
@@ -96,6 +116,11 @@ func (r *DashboardRepository) GetAnalytics(ctx context.Context, userID int64) (*
 	`); err != nil {
 		return nil, err
 	}
+
+	analytics.StatusCounts = statusCountsMap(analytics.ByStatus)
+	analytics.PipelineBreakdown = calculatePipelineBreakdown(analytics.StatusCounts)
+	analytics.ActiveApplications = activeApplicationsTotal(analytics.StatusCounts)
+	analytics.ClosedApplications = analytics.PipelineBreakdown.Closed
 
 	if analytics.BySource, err = r.listGroupCounts(ctx, userID, `
 		SELECT
@@ -145,7 +170,62 @@ func (r *DashboardRepository) GetAnalytics(ctx context.Context, userID int64) (*
 		return nil, err
 	}
 
+	if analytics.ApplicationsOverTime, err = r.listGroupCounts(ctx, userID, `
+		SELECT
+			applied_date::text AS name,
+			COUNT(*) AS count
+		FROM applications
+		WHERE user_id = $1
+			AND applied_date IS NOT NULL
+			AND applied_date >= CURRENT_DATE - INTERVAL '30 days'
+		GROUP BY applied_date
+		ORDER BY applied_date ASC
+	`); err != nil {
+		return nil, err
+	}
+
 	return &analytics, nil
+}
+
+func statusCountsMap(items []models.DashboardGroupCount) map[string]int64 {
+	results := make(map[string]int64, len(items))
+
+	for _, item := range items {
+		results[item.Name] = item.Count
+	}
+
+	return results
+}
+
+func activeApplicationsTotal(statusCounts map[string]int64) int64 {
+	var total int64
+
+	for status, count := range statusCounts {
+		if activeDashboardStatuses[status] {
+			total += count
+		}
+	}
+
+	return total
+}
+
+func calculatePipelineBreakdown(statusCounts map[string]int64) models.DashboardPipelineBreakdown {
+	var breakdown models.DashboardPipelineBreakdown
+
+	for status, count := range statusCounts {
+		switch {
+		case activePipelineStatuses[status]:
+			breakdown.ActivePipeline += count
+		case status == "Interview":
+			breakdown.Interviews += count
+		case status == "Offer":
+			breakdown.Offers += count
+		default:
+			breakdown.Closed += count
+		}
+	}
+
+	return breakdown
 }
 
 func (r *DashboardRepository) listGroupCounts(ctx context.Context, userID int64, query string) ([]models.DashboardGroupCount, error) {

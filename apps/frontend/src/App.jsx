@@ -6,6 +6,7 @@ import ApplicationForm from "./components/ApplicationForm";
 import ApplicationsTable from "./components/ApplicationsTable";
 import AuthGate from "./components/AuthGate";
 import CaptureReviewModal from "./components/CaptureReviewModal";
+import CollapsibleCard from "./components/CollapsibleCard";
 import CSVDataPanel from "./components/CSVDataPanel";
 import CVVersionsPanel from "./components/CVVersionsPanel";
 import FiltersBar from "./components/FiltersBar";
@@ -15,7 +16,7 @@ import StatusHistoryModal from "./components/StatusHistoryModal";
 import ThemeToggle from "./components/ThemeToggle";
 
 import {
-  CLOSED_STATUSES,
+  ACTIVE_STATUSES,
   EMPTY_APPLICATION_FORM,
   EMPTY_CV_VERSION_FORM,
   EMPTY_FILTERS,
@@ -63,6 +64,14 @@ function formatDashboardDate(value) {
 function percentage(part, total) {
   if (!total) return 0;
   return Math.round((part / total) * 100);
+}
+
+function analyticsFollowUpTotal(analytics) {
+  return (
+    Number(analytics?.overdue_follow_ups || 0) +
+    Number(analytics?.due_today_follow_ups || 0) +
+    Number(analytics?.upcoming_follow_ups || 0)
+  );
 }
 
 function DashboardSidebar({ user, onPipelineViewChange }) {
@@ -121,19 +130,23 @@ function PipelineNavigation({ view, onViewChange }) {
 
 function PipelineSnapshot({ analytics, summary, followUps }) {
   const active = analytics?.active_applications ?? summary.active;
+  const interviews = analytics?.interviews_total ?? summary.interviews;
   const offers = analytics?.offers ?? 0;
+  const followUpCount = analytics ? analyticsFollowUpTotal(analytics) : followUps.items.length;
   const cards = [
-    ["ACTIVE", active, "Current pipeline", "blue"],
-    ["INTERVIEWS", summary.interviews, "From your applications", "purple"],
-    ["FOLLOW-UPS", followUps.items.length, "Scheduled follow-ups", "amber"],
+    ["ACTIVE", active, "Includes interviews and offers", "blue"],
+    ["INTERVIEWS", interviews, "Interview-stage applications", "purple"],
+    ["FOLLOW-UPS", followUpCount, "Scheduled follow-ups", "amber"],
     ["OFFERS", offers, "Current offers", "green"],
   ];
 
   return (
-    <section className="dashboard-card pipeline-snapshot" id="pipeline-snapshot">
-      <div className="dashboard-section-heading">
-        <p className="section-kicker">Pipeline snapshot</p>
-      </div>
+    <CollapsibleCard
+      id="pipeline-snapshot"
+      className="dashboard-card pipeline-snapshot"
+      kicker="Pipeline snapshot"
+      title="Pipeline Snapshot"
+    >
       <div className="pipeline-snapshot-grid">
         {cards.map(([label, value, helper, tone]) => (
           <article className={`pipeline-tile pipeline-tile-${tone}`} key={label}>
@@ -143,29 +156,29 @@ function PipelineSnapshot({ analytics, summary, followUps }) {
           </article>
         ))}
       </div>
-    </section>
+    </CollapsibleCard>
   );
 }
 
-function PipelineBreakdown({ summary, followUps }) {
-  const total = Math.max(summary.total, 0);
-  const active = summary.active;
-  const interviews = summary.interviews;
-  const followUpCount = followUps.items.length;
-  const offers = summary.offers;
-  const breakdownTotal = Math.max(active + interviews + followUpCount + offers, 0);
+function PipelineBreakdown({ analytics, summary }) {
+  const breakdown = analytics?.pipeline_breakdown || {};
+  const total = Math.max(analytics?.total_applications ?? summary.total, 0);
+  const active = breakdown.active ?? summary.activePipeline;
+  const interviews = breakdown.interviews ?? summary.interviews;
+  const offers = breakdown.offers ?? summary.offers;
+  const closed = breakdown.closed ?? summary.closed;
   const segments = [
-    ["Active", active, "#5b4df5"],
+    ["Active pipeline", active, "#5b4df5"],
     ["Interviews", interviews, "#3b82f6"],
-    ["Follow-ups", followUpCount, "#94a3b8"],
-    ["Offers", offers, "#111827"],
+    ["Offers", offers, "#21a366"],
+    ["Closed", closed, "#111827"],
   ];
-  const gradient = breakdownTotal
+  const gradient = total
     ? `conic-gradient(${segments
         .reduce(
           (acc, [, count, color]) => {
             const start = acc.offset;
-            const end = start + percentage(count, breakdownTotal);
+            const end = start + percentage(count, total);
             acc.parts.push(`${color} ${start}% ${end}%`);
             acc.offset = end;
             return acc;
@@ -176,8 +189,12 @@ function PipelineBreakdown({ summary, followUps }) {
     : "#eef2f7";
 
   return (
-    <section className="dashboard-card pipeline-breakdown" id="pipeline-breakdown">
-      <p className="section-kicker">Pipeline breakdown</p>
+    <CollapsibleCard
+      id="pipeline-breakdown"
+      className="dashboard-card pipeline-breakdown"
+      kicker="Pipeline breakdown"
+      title="Pipeline Breakdown"
+    >
       <div className="breakdown-content">
         <div className="donut-chart" style={{ background: gradient }}>
           <div>
@@ -189,27 +206,35 @@ function PipelineBreakdown({ summary, followUps }) {
           {segments.map(([label, count, color]) => (
             <p key={label}>
               <span><i style={{ background: color }} />{label}</span>
-              <strong>{count} ({percentage(count, breakdownTotal)}%)</strong>
+              <strong>{count} ({percentage(count, total)}%)</strong>
             </p>
           ))}
         </div>
       </div>
-    </section>
+    </CollapsibleCard>
   );
 }
 
-function ApplicationsOverTime({ applications }) {
-  const datedApplications = applications
-    .map((application) => getDateOnly(application.applied_date))
-    .filter(Boolean)
+function ApplicationsOverTime({ analytics, id = "applications-over-time" }) {
+  const dailyCounts = analytics?.applications_over_time || [];
+  const datedApplications = dailyCounts
+    .flatMap((item) => {
+      const date = getDateOnly(item.name);
+      if (!date) return [];
+      return Array.from({ length: Number(item.count) || 0 }, () => date);
+    })
     .sort((a, b) => a.getTime() - b.getTime());
 
   if (datedApplications.length === 0) {
     return (
-      <section className="dashboard-card applications-over-time">
-        <p className="section-kicker">Applications over time</p>
+      <CollapsibleCard
+        id={id}
+        className="dashboard-card applications-over-time"
+        kicker="Applications over time"
+        title="Applications Over Time"
+      >
         <div className="dashboard-empty">No applied dates available yet.</div>
-      </section>
+      </CollapsibleCard>
     );
   }
 
@@ -223,11 +248,13 @@ function ApplicationsOverTime({ applications }) {
   );
 
   return (
-    <section className="dashboard-card applications-over-time">
-      <div className="dashboard-section-row">
-        <p className="section-kicker">Applications over time</p>
-        <span>Last 30 days</span>
-      </div>
+    <CollapsibleCard
+      id={id}
+      className="dashboard-card applications-over-time"
+      kicker="Applications over time"
+      title="Applications Over Time"
+      action={<span className="card-meta-pill">Last 30 days</span>}
+    >
       <svg viewBox="0 0 100 110" preserveAspectRatio="none" aria-hidden="true">
         <polyline points={points.join(" ")} />
       </svg>
@@ -236,7 +263,7 @@ function ApplicationsOverTime({ applications }) {
           <span key={date.toISOString()}>{formatDashboardDate(date)}</span>
         ))}
       </div>
-    </section>
+    </CollapsibleCard>
   );
 }
 
@@ -244,8 +271,12 @@ function UpcomingFollowUps({ followUps, onEdit }) {
   const items = followUps.items.slice(0, 3);
 
   return (
-    <section className="dashboard-card" id="follow-ups">
-      <p className="section-kicker">Up next / follow-ups</p>
+    <CollapsibleCard
+      id="follow-ups"
+      className="dashboard-card"
+      kicker="Up next / follow-ups"
+      title="Up Next"
+    >
       {items.length === 0 ? (
         <div className="dashboard-empty">No follow-ups due or scheduled.</div>
       ) : (
@@ -254,7 +285,7 @@ function UpcomingFollowUps({ followUps, onEdit }) {
             <article key={`upcoming-${item.id}`}>
               <span className={`timeline-dot timeline-${item.follow_up_state}`} />
               <div>
-                <strong>{item.status === "Technical Interview" ? "Technical Interview" : "Follow up"}</strong>
+                <strong>{item.status === "Interview" ? "Interview" : "Follow up"}</strong>
                 <p>{item.company_name}</p>
               </div>
               <button type="button" onClick={() => onEdit(item)}>
@@ -265,7 +296,7 @@ function UpcomingFollowUps({ followUps, onEdit }) {
         </div>
       )}
       <a href="#applications" className="dashboard-link">View all follow-ups -&gt;</a>
-    </section>
+    </CollapsibleCard>
   );
 }
 
@@ -275,8 +306,12 @@ function RecentActivity({ applications }) {
     .slice(0, 3);
 
   return (
-    <section className="dashboard-card">
-      <p className="section-kicker">Recent activity</p>
+    <CollapsibleCard
+      id="recent-activity"
+      className="dashboard-card"
+      kicker="Recent activity"
+      title="Recent Activity"
+    >
       {items.length === 0 ? (
         <div className="dashboard-empty">No activity yet.</div>
       ) : (
@@ -294,20 +329,20 @@ function RecentActivity({ applications }) {
         </div>
       )}
       <a href="#applications" className="dashboard-link">View all activity -&gt;</a>
-    </section>
+    </CollapsibleCard>
   );
 }
 
 function CVVersionSummary({ cvVersions }) {
   return (
-    <section className="dashboard-card cv-summary-card" id="cv-versions">
-      <div className="dashboard-section-row">
-        <div>
-          <p className="section-kicker">CV version management</p>
-          <p className="muted">Track and manage your CV variants for different applications.</p>
-        </div>
-        <a href="#cv-management" className="dashboard-link">Manage CV versions -&gt;</a>
-      </div>
+    <CollapsibleCard
+      id="cv-versions"
+      className="dashboard-card cv-summary-card"
+      kicker="CV version management"
+      title="CV Version Management"
+      description="Track and manage your CV variants for different applications."
+      action={<a href="#cv-management" className="dashboard-link inline-dashboard-link">Manage CV versions -&gt;</a>}
+    >
       {cvVersions.length === 0 ? (
         <div className="dashboard-empty">No CV versions yet.</div>
       ) : (
@@ -321,7 +356,7 @@ function CVVersionSummary({ cvVersions }) {
           ))}
         </div>
       )}
-    </section>
+    </CollapsibleCard>
   );
 }
 
@@ -469,16 +504,19 @@ function AppContent({ user, onLogout, isLoggingOut }) {
   }, [theme]);
 
   const summary = useMemo(() => {
-    const active = applications.filter((app) => !CLOSED_STATUSES.includes(app.status)).length;
+    const active = applications.filter((app) => ACTIVE_STATUSES.includes(app.status)).length;
+    const activePipeline = applications.filter((app) =>
+      ["Saved", "Applied", "In Progress", "Follow-up"].includes(app.status),
+    ).length;
 
     return {
       total: applications.length,
       active,
+      activePipeline,
       applied: applications.filter((app) => app.status === "Applied").length,
-      interviews: applications.filter((app) =>
-        ["Interview Scheduled", "Technical Interview"].includes(app.status),
-      ).length,
+      interviews: applications.filter((app) => app.status === "Interview").length,
       offers: applications.filter((app) => app.status === "Offer").length,
+      closed: applications.filter((app) => !ACTIVE_STATUSES.includes(app.status)).length,
       highPriority: applications.filter((app) => app.priority === "High").length,
     };
   }, [applications]);
@@ -1037,14 +1075,14 @@ function AppContent({ user, onLogout, isLoggingOut }) {
               <div className="dashboard-grid-wide">
                 <PipelineSnapshot analytics={analytics} summary={summary} followUps={followUps} />
               </div>
-              <PipelineBreakdown summary={summary} followUps={followUps} />
+              <PipelineBreakdown analytics={analytics} summary={summary} />
             </>
           )}
 
           {pipelineView === "breakdown" && (
             <>
-              <PipelineBreakdown summary={summary} followUps={followUps} />
-              <ApplicationsOverTime applications={applications} />
+              <PipelineBreakdown analytics={analytics} summary={summary} />
+              <ApplicationsOverTime analytics={analytics} id="applications-over-time-breakdown" />
             </>
           )}
 
@@ -1060,7 +1098,7 @@ function AppContent({ user, onLogout, isLoggingOut }) {
         </section>
 
         <section className="dashboard-grid dashboard-grid-middle">
-          <ApplicationsOverTime applications={applications} />
+          <ApplicationsOverTime analytics={analytics} />
           <UpcomingFollowUps followUps={followUps} onEdit={startEdit} />
           <RecentActivity applications={applications} />
         </section>

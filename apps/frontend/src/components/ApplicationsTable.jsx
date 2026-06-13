@@ -1,4 +1,5 @@
 import React from "react";
+import CollapsibleCard from "./CollapsibleCard";
 
 const sortableColumns = [
   { key: "job_title", label: "Role" },
@@ -59,143 +60,138 @@ export default function ApplicationsTable({
   }
 
   return (
-    <section className="card applications-card">
-      <div className="card-header">
-        <div>
-          <p className="section-kicker">Pipeline</p>
-          <h2>Applications</h2>
-          <p className="muted">
-            Showing {applications.length} of {pagination.totalItems} result
-            {pagination.totalItems === 1 ? "" : "s"}
-            {listLoading ? "..." : ""}
-          </p>
+    <CollapsibleCard
+      id="pipeline-applications-table"
+      className="card applications-card"
+      kicker="Pipeline"
+      title="Applications"
+      description={`Showing ${applications.length} of ${pagination.totalItems} result${pagination.totalItems === 1 ? "" : "s"}${listLoading ? "..." : ""}`}
+      action={<button type="button" className="btn btn-soft" onClick={onRefresh}>Refresh</button>}
+    >
+      <div className="pipeline-table-scroll">
+        <div className="pipeline-table-content">
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  {sortableColumns.map((column) => (
+                    <th key={column.key}>
+                      {renderSortableHeader(column.key, column.label)}
+                    </th>
+                  ))}
+                  <th>Actions</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {applications.map((application) => (
+                  <tr key={application.id}>
+                    <td>
+                      <div className="table-primary">
+                        {application.job_url ? (
+                          <a href={application.job_url} target="_blank" rel="noreferrer">
+                            {application.job_title}
+                          </a>
+                        ) : (
+                          application.job_title
+                        )}
+                      </div>
+                      <small>
+                        {application.work_mode || "-"} · CV:{" "}
+                        {application.cv_version || "Not selected"}
+                      </small>
+                    </td>
+
+                    <td>{application.company_name}</td>
+
+                    <td>
+                      <span className={statusClass(application.status)}>
+                        {application.status}
+                      </span>
+                    </td>
+
+                    <td>
+                      <span className={priorityClass(application.priority)}>
+                        {application.priority || "Medium"}
+                      </span>
+                    </td>
+
+                    <td>{application.salary_range || "-"}</td>
+                    <td>{application.follow_up_date || "-"}</td>
+
+                    <td>
+                      {application.recruiter_email ? (
+                        <a href={`mailto:${application.recruiter_email}`}>
+                          {application.recruiter_name || application.recruiter_email}
+                        </a>
+                      ) : (
+                        application.recruiter_name || "-"
+                      )}
+                    </td>
+
+                    <td>
+                      <div className="actions">
+                        <button
+                          type="button"
+                          className="btn btn-soft btn-small"
+                          onClick={() => onView(application)}
+                        >
+                          View
+                        </button>
+
+                        <button
+                          type="button"
+                          className="btn btn-soft btn-small"
+                          onClick={() => onEdit(application)}
+                        >
+                          Edit
+                        </button>
+
+                        <button
+                          type="button"
+                          className="btn btn-soft btn-small"
+                          onClick={() => onHistory(application)}
+                        >
+                          History
+                        </button>
+
+                        <button
+                          type="button"
+                          className="btn btn-danger btn-small"
+                          onClick={() => onDelete(application.id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+
+                {applications.length === 0 && (
+                  <tr>
+                    <td colSpan="8" className="empty">
+                      <div className="empty-state">
+                        <div className="empty-state-icon" aria-hidden="true">
+                          JO
+                        </div>
+                        <h3>No applications in this view</h3>
+                        <p>
+                          Add your first role from the form, import a CSV, or clear filters
+                          if you expected existing applications here.
+                        </p>
+                        <div className="empty-state-steps">
+                          <span>Save role details</span>
+                          <span>Attach CV version</span>
+                          <span>Schedule follow-up</span>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-
-        <button type="button" className="btn btn-soft" onClick={onRefresh}>
-          Refresh
-        </button>
-      </div>
-
-      <div className="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              {sortableColumns.map((column) => (
-                <th key={column.key}>
-                  {renderSortableHeader(column.key, column.label)}
-                </th>
-              ))}
-              <th>Actions</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {applications.map((application) => (
-              <tr key={application.id}>
-                <td>
-                  <div className="table-primary">
-                    {application.job_url ? (
-                      <a href={application.job_url} target="_blank" rel="noreferrer">
-                        {application.job_title}
-                      </a>
-                    ) : (
-                      application.job_title
-                    )}
-                  </div>
-                  <small>
-                    {application.work_mode || "-"} · CV:{" "}
-                    {application.cv_version || "Not selected"}
-                  </small>
-                </td>
-
-                <td>{application.company_name}</td>
-
-                <td>
-                  <span className={statusClass(application.status)}>
-                    {application.status}
-                  </span>
-                </td>
-
-                <td>
-                  <span className={priorityClass(application.priority)}>
-                    {application.priority || "Medium"}
-                  </span>
-                </td>
-
-                <td>{application.salary_range || "-"}</td>
-                <td>{application.follow_up_date || "-"}</td>
-
-                <td>
-                  {application.recruiter_email ? (
-                    <a href={`mailto:${application.recruiter_email}`}>
-                      {application.recruiter_name || application.recruiter_email}
-                    </a>
-                  ) : (
-                    application.recruiter_name || "-"
-                  )}
-                </td>
-
-                <td>
-                  <div className="actions">
-                    <button
-                      type="button"
-                      className="btn btn-soft btn-small"
-                      onClick={() => onView(application)}
-                    >
-                      View
-                    </button>
-
-                    <button
-                      type="button"
-                      className="btn btn-soft btn-small"
-                      onClick={() => onEdit(application)}
-                    >
-                      Edit
-                    </button>
-
-                    <button
-                      type="button"
-                      className="btn btn-soft btn-small"
-                      onClick={() => onHistory(application)}
-                    >
-                      History
-                    </button>
-
-                    <button
-                      type="button"
-                      className="btn btn-danger btn-small"
-                      onClick={() => onDelete(application.id)}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-
-            {applications.length === 0 && (
-              <tr>
-                <td colSpan="8" className="empty">
-                  <div className="empty-state">
-                    <div className="empty-state-icon" aria-hidden="true">
-                      JO
-                    </div>
-                    <h3>No applications in this view</h3>
-                    <p>
-                      Add your first role from the form, import a CSV, or clear filters
-                      if you expected existing applications here.
-                    </p>
-                    <div className="empty-state-steps">
-                      <span>Save role details</span>
-                      <span>Attach CV version</span>
-                      <span>Schedule follow-up</span>
-                    </div>
-                  </div>
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
       </div>
 
       <div className="pagination-bar">
@@ -238,6 +234,6 @@ export default function ApplicationsTable({
           </button>
         </div>
       </div>
-    </section>
+    </CollapsibleCard>
   );
 }
