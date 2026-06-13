@@ -252,14 +252,13 @@ func allowedPriorities() map[string]bool {
 
 func allowedStatuses() map[string]bool {
 	return map[string]bool{
-		"Saved":               true,
-		"Applied":             true,
-		"Recruiter Contacted": true,
-		"Interview Scheduled": true,
-		"Technical Interview": true,
-		"Offer":               true,
-		"Rejected":            true,
-		"Ghosted":             true,
-		"Withdrawn":           true,
+		"Saved":       true,
+		"Applied":     true,
+		"In Progress": true,
+		"Interview":   true,
+		"Follow-up":   true,
+		"Offer":       true,
+		"Rejected":    true,
+		"Withdrawn":   true,
 	}
 }

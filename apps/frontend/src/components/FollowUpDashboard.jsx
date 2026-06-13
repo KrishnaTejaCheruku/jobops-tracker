@@ -1,18 +1,15 @@
 import React from "react";
+import CollapsibleCard from "./CollapsibleCard";
 
 export default function FollowUpDashboard({ followUps, onEdit }) {
   return (
-    <section className="card followup-card">
-      <div className="card-header">
-        <div>
-          <p className="section-kicker">Operational queue</p>
-          <h2>Follow-ups</h2>
-          <p className="muted">
-            Active applications with follow-up dates, excluding Offer, Rejected, and Withdrawn.
-          </p>
-        </div>
-      </div>
-
+    <CollapsibleCard
+      id="follow-up-dashboard"
+      className="card followup-card"
+      kicker="Operational queue"
+      title="Follow-ups"
+      description="Active applications with follow-up dates, including interviews and offers."
+    >
       {followUps.items.length === 0 ? (
         <p className="empty">No follow-ups due or scheduled.</p>
       ) : (
@@ -44,6 +41,6 @@ export default function FollowUpDashboard({ followUps, onEdit }) {
           ))}
         </div>
       )}
-    </section>
+    </CollapsibleCard>
   );
 }

@@ -1,4 +1,5 @@
 import React from "react";
+import CollapsibleCard from "./CollapsibleCard";
 
 function formatPercent(value) {
   const number = Number(value) || 0;
@@ -42,53 +43,38 @@ function GroupList({ title, items }) {
 export default function AnalyticsDashboard({ analytics, loading, onRefresh }) {
   if (loading && !analytics) {
     return (
-      <section className="card analytics-card">
-        <div className="card-header">
-          <div>
-            <p className="section-kicker">Analytics</p>
-            <h2>Dashboard Analytics</h2>
-            <p className="muted">Loading analytics from backend...</p>
-          </div>
-        </div>
-      </section>
+      <CollapsibleCard
+        id="dashboard-analytics"
+        className="card analytics-card"
+        kicker="Analytics"
+        title="Dashboard Analytics"
+        description="Loading analytics from backend..."
+      />
     );
   }
 
   if (!analytics) {
     return (
-      <section className="card analytics-card">
-        <div className="card-header">
-          <div>
-            <p className="section-kicker">Analytics</p>
-            <h2>Dashboard Analytics</h2>
-            <p className="muted">Analytics are not available yet.</p>
-          </div>
-          <button type="button" className="btn btn-soft" onClick={onRefresh}>
-            Retry
-          </button>
-        </div>
-      </section>
+      <CollapsibleCard
+        id="dashboard-analytics"
+        className="card analytics-card"
+        kicker="Analytics"
+        title="Dashboard Analytics"
+        description="Analytics are not available yet."
+        action={<button type="button" className="btn btn-soft" onClick={onRefresh}>Retry</button>}
+      />
     );
   }
 
   return (
-    <section className="card analytics-card">
-      <div className="card-header">
-        <div>
-          <p className="section-kicker">Analytics</p>
-          <h2>Dashboard Analytics</h2>
-          <p className="muted">
-            Backend-generated metrics from PostgreSQL, including pipeline health,
-            follow-ups, conversions, and CV usage.
-            {loading ? " Refreshing..." : ""}
-          </p>
-        </div>
-
-        <button type="button" className="btn btn-soft" onClick={onRefresh}>
-          Refresh Analytics
-        </button>
-      </div>
-
+    <CollapsibleCard
+      id="dashboard-analytics"
+      className="card analytics-card"
+      kicker="Analytics"
+      title="Dashboard Analytics"
+      description={`Backend-generated metrics from PostgreSQL, including pipeline health, follow-ups, conversions, and CV usage.${loading ? " Refreshing..." : ""}`}
+      action={<button type="button" className="btn btn-soft" onClick={onRefresh}>Refresh Analytics</button>}
+    >
       <div className="analytics-metrics">
         <article className="analytics-metric">
           <span>Total</span>
@@ -99,13 +85,13 @@ export default function AnalyticsDashboard({ analytics, loading, onRefresh }) {
         <article className="analytics-metric">
           <span>Active</span>
           <strong>{analytics.active_applications}</strong>
-          <p>Not closed yet</p>
+          <p>Includes interviews and offers</p>
         </article>
 
         <article className="analytics-metric">
           <span>Closed</span>
           <strong>{analytics.closed_applications}</strong>
-          <p>Offer, rejected, or withdrawn</p>
+          <p>Not in the active status set</p>
         </article>
 
         <article className="analytics-metric analytics-metric-danger">
@@ -146,6 +132,6 @@ export default function AnalyticsDashboard({ analytics, loading, onRefresh }) {
         <GroupList title="By Work Mode" items={analytics.by_work_mode} />
         <GroupList title="By CV Version" items={analytics.by_cv_version} />
       </div>
-    </section>
+    </CollapsibleCard>
   );
 }

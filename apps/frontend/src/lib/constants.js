@@ -7,20 +7,30 @@ export const APP_BASE_URL =
 export const STATUS_OPTIONS = [
   "Saved",
   "Applied",
-  "Recruiter Contacted",
-  "Interview Scheduled",
-  "Technical Interview",
+  "In Progress",
+  "Interview",
+  "Follow-up",
   "Offer",
   "Rejected",
-  "Ghosted",
   "Withdrawn",
 ];
 
-export const CLOSED_STATUSES = [
+export const ACTIVE_STATUSES = [
+  "Saved",
+  "Applied",
+  "In Progress",
+  "Interview",
+  "Follow-up",
   "Offer",
+];
+
+export const CLOSED_STATUSES = [
   "Rejected",
   "Ghosted",
   "Withdrawn",
+  "Recruiter Contacted",
+  "Interview Scheduled",
+  "Technical Interview",
 ];
 
 export const PRIORITY_OPTIONS = ["Low", "Medium", "High"];

@@ -75,6 +75,7 @@ a:hover {
   min-height: 100vh;
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
+  min-width: 0;
   background: var(--page-bg);
   color: var(--text-main);
 }
@@ -283,6 +284,14 @@ a:hover {
   display: grid;
   gap: 20px;
   margin-bottom: 20px;
+  min-width: 0;
+}
+
+.dashboard-grid > *,
+.workspace > *,
+.right-pane > *,
+.dashboard-workbench > * {
+  min-width: 0;
 }
 
 .dashboard-grid-top {
@@ -290,11 +299,11 @@ a:hover {
 }
 
 .dashboard-grid-middle {
-  grid-template-columns: minmax(340px, 1.15fr) minmax(280px, 0.9fr) minmax(280px, 0.9fr);
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 }
 
 .dashboard-grid-lower {
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 430px);
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 }
 
 .pipeline-view {
@@ -324,6 +333,81 @@ a:hover {
   background: var(--surface);
   box-shadow: var(--shadow-card);
   padding: 22px;
+}
+
+.collapsible-card {
+  min-width: 0;
+}
+
+.dashboard-card.collapsible-card .card-header {
+  padding: 0;
+}
+
+.collapsible-card-header {
+  min-width: 0;
+}
+
+.collapsible-card-toggle {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.collapsible-card-toggle > span {
+  min-width: 0;
+}
+
+.collapsible-card-toggle h2 {
+  margin: 0;
+}
+
+.collapsible-card-toggle strong {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  color: var(--primary);
+  font-size: 16px;
+  line-height: 1;
+}
+
+.collapsible-card-action {
+  flex: 0 0 auto;
+}
+
+.collapsible-card-body {
+  min-width: 0;
+}
+
+.dashboard-card .collapsible-card-body {
+  margin-top: 16px;
+}
+
+.card-meta-pill {
+  display: inline-flex;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  color: var(--text-muted);
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.inline-dashboard-link {
+  margin-top: 0;
 }
 
 .pipeline-navigation {
@@ -384,7 +468,7 @@ a:hover {
 
 .pipeline-snapshot-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 16px;
   align-items: stretch;
 }
@@ -392,6 +476,7 @@ a:hover {
 .pipeline-tile {
   display: grid;
   grid-template-rows: auto 1fr auto;
+  min-width: 0;
   min-height: 132px;
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-md);
@@ -672,6 +757,7 @@ a:hover {
   display: grid;
   gap: 22px;
   margin-top: 24px;
+  min-width: 0;
 }
 
 .app-shell {
@@ -832,6 +918,7 @@ h3 {
 }
 
 .card {
+  min-width: 0;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: rgba(255, 255, 255, 0.94);
@@ -844,6 +931,7 @@ h3 {
   gap: 18px;
   align-items: flex-start;
   padding: 22px 22px 0;
+  min-width: 0;
 }
 
 .muted {
@@ -887,6 +975,7 @@ h3 {
 }
 
 .analytics-metric {
+  min-width: 0;
   padding: 16px;
   border: 1px solid rgba(30, 41, 59, 0.1);
   border-radius: 10px;
@@ -938,6 +1027,7 @@ h3 {
 }
 
 .analytics-group {
+  min-width: 0;
   padding: 16px;
   border: 1px solid rgba(30, 41, 59, 0.1);
   border-radius: 10px;
@@ -1005,6 +1095,7 @@ h3 {
   grid-template-columns: 500px minmax(0, 1fr);
   gap: 22px;
   align-items: start;
+  min-width: 0;
 }
 
 .right-pane {
@@ -1164,8 +1255,21 @@ textarea {
   padding-bottom: 10px;
 }
 
-.table-wrap {
+.pipeline-table-scroll {
+  width: 100%;
+  max-width: 100%;
   overflow-x: auto;
+  overflow-y: visible;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pipeline-table-content {
+  min-width: 1080px;
+}
+
+.table-wrap {
+  overflow: visible;
   padding: 12px 12px 0;
 }
 
@@ -1221,6 +1325,9 @@ td small {
 }
 
 .status-applied,
+.status-in-progress,
+.status-interview,
+.status-follow-up,
 .status-interview-scheduled,
 .status-technical-interview {
   background: var(--blue-soft);
@@ -2212,6 +2319,9 @@ html[data-theme="dark"] .analytics-group-header span {
 }
 
 html[data-theme="dark"] .status-applied,
+html[data-theme="dark"] .status-in-progress,
+html[data-theme="dark"] .status-interview,
+html[data-theme="dark"] .status-follow-up,
 html[data-theme="dark"] .status-interview-scheduled,
 html[data-theme="dark"] .status-technical-interview {
   background: rgba(96, 165, 250, 0.16);
