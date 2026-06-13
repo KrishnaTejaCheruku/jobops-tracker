@@ -32,6 +32,8 @@ type SMTPOTPDelivery struct {
 	FromName string
 }
 
+const loginCodeSubject = "Your JobOps Tracker login code"
+
 func NewOTPDeliveryFromEnv(appEnv string) (OTPDelivery, error) {
 	mode := strings.ToLower(strings.TrimSpace(os.Getenv("OTP_DELIVERY_MODE")))
 	if mode == "" {
@@ -82,22 +84,20 @@ func NewSMTPOTPDeliveryFromEnv() (*SMTPOTPDelivery, error) {
 }
 
 func (d *SMTPOTPDelivery) DeliverOTP(_ context.Context, email string, otp string) error {
-	to := strings.TrimSpace(email)
-	if to == "" {
-		return errors.New("otp recipient email is required")
-	}
-	if containsMailHeaderInjectionChars(to) {
-		return errors.New("otp recipient email contains invalid characters")
-	}
-	if containsMailHeaderInjectionChars(d.From) || containsMailHeaderInjectionChars(d.FromName) {
-		return errors.New("smtp sender configuration contains invalid characters")
+	parsedTo, err := parseRecipientAddress(email)
+	if err != nil {
+		return err
 	}
 
-	parsedTo, err := mail.ParseAddress(to)
-	if err != nil || strings.TrimSpace(parsedTo.Address) == "" {
-		return errors.New("otp recipient email must be valid")
+	parsedFrom, err := parseSenderAddress(d.From)
+	if err != nil {
+		return err
 	}
-	to = strings.TrimSpace(parsedTo.Address)
+
+	message, err := d.message(parsedTo.Address, otp, loginCodeSubject)
+	if err != nil {
+		return err
+	}
 
 	addr := fmt.Sprintf("%s:%d", d.Host, d.Port)
 	var auth smtp.Auth
@@ -105,7 +105,7 @@ func (d *SMTPOTPDelivery) DeliverOTP(_ context.Context, email string, otp string
 		auth = smtp.PlainAuth("", d.Username, d.Password, d.Host)
 	}
 
-	if err := smtp.SendMail(addr, auth, d.From, []string{to}, d.message(to, otp)); err != nil {
+	if err := smtp.SendMail(addr, auth, parsedFrom.Address, []string{parsedTo.Address}, message); err != nil {
 		return fmt.Errorf("send otp email: %w", err)
 	}
 
@@ -116,16 +116,67 @@ func containsMailHeaderInjectionChars(value string) bool {
 	return strings.ContainsAny(value, "\r\n")
 }
 
-func (d *SMTPOTPDelivery) message(to string, otp string) []byte {
-	from := d.From
-	if d.FromName != "" {
-		from = fmt.Sprintf("%s <%s>", d.FromName, d.From)
+func sanitizeMailHeaderValue(value string) string {
+	value = strings.ReplaceAll(value, "\r", "")
+	value = strings.ReplaceAll(value, "\n", "")
+	return strings.TrimSpace(value)
+}
+
+func parseRecipientAddress(value string) (*mail.Address, error) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return nil, errors.New("otp recipient email is required")
+	}
+	if containsMailHeaderInjectionChars(value) {
+		return nil, errors.New("otp recipient email contains invalid characters")
+	}
+
+	parsed, err := mail.ParseAddress(value)
+	if err != nil || strings.TrimSpace(parsed.Address) == "" {
+		return nil, errors.New("otp recipient email must be valid")
+	}
+
+	return &mail.Address{Address: strings.TrimSpace(parsed.Address)}, nil
+}
+
+func parseSenderAddress(value string) (*mail.Address, error) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return nil, errors.New("SMTP_FROM is required when OTP_DELIVERY_MODE=smtp")
+	}
+	if containsMailHeaderInjectionChars(value) {
+		return nil, errors.New("smtp sender configuration contains invalid characters")
+	}
+
+	parsed, err := mail.ParseAddress(value)
+	if err != nil || strings.TrimSpace(parsed.Address) == "" {
+		return nil, errors.New("smtp sender address must be valid")
+	}
+
+	return &mail.Address{Address: strings.TrimSpace(parsed.Address)}, nil
+}
+
+func (d *SMTPOTPDelivery) message(to string, otp string, subject string) ([]byte, error) {
+	parsedTo, err := parseRecipientAddress(to)
+	if err != nil {
+		return nil, err
+	}
+
+	parsedFrom, err := parseSenderAddress(d.From)
+	if err != nil {
+		return nil, err
+	}
+	parsedFrom.Name = sanitizeMailHeaderValue(d.FromName)
+
+	safeSubject := sanitizeMailHeaderValue(subject)
+	if safeSubject == "" {
+		return nil, errors.New("otp email subject is required")
 	}
 
 	body := strings.Join([]string{
-		fmt.Sprintf("From: %s", from),
-		fmt.Sprintf("To: %s", to),
-		"Subject: Your JobOps Tracker login code",
+		fmt.Sprintf("From: %s", parsedFrom.String()),
+		fmt.Sprintf("To: %s", parsedTo.String()),
+		fmt.Sprintf("Subject: %s", safeSubject),
 		"MIME-Version: 1.0",
 		"Content-Type: text/plain; charset=UTF-8",
 		"",
@@ -135,7 +186,7 @@ func (d *SMTPOTPDelivery) message(to string, otp string) []byte {
 		"",
 	}, "\r\n")
 
-	return []byte(body)
+	return []byte(body), nil
 }
 
 func parseSMTPPort(value string) (int, error) {

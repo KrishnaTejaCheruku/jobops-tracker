@@ -1,5 +1,17 @@
 import re
-from urllib.parse import urlparse
+from urllib.parse import urlsplit
+
+
+MAX_LOCATION_LINES = 80
+MAX_LOCATION_LINE_LENGTH = 400
+MAX_LOCATION_CITY_LENGTH = 120
+LOCATION_SUFFIXES = {
+    "germany",
+    "deutschland",
+    "austria",
+    "switzerland",
+    "remote",
+}
 
 
 def extract_capture_fields(
@@ -45,24 +57,41 @@ def _combine_text(*parts: str) -> str:
 
 
 def _detect_source(url: str) -> str:
-    host = urlparse(url or "").hostname or ""
-    host = host.lower()
+    host = _normalized_hostname(url)
 
-    if "linkedin.com" in host:
+    if _host_matches_domain(host, "linkedin.com"):
         return "LinkedIn"
-    if "indeed." in host:
+    if _host_matches_any_domain(host, ("indeed.com", "indeed.de", "indeed.co.uk")):
         return "Other"
-    if "stepstone." in host:
+    if _host_matches_any_domain(host, ("stepstone.com", "stepstone.de")):
         return "Other"
-    if "greenhouse.io" in host:
+    if _host_matches_domain(host, "greenhouse.io"):
         return "Company Website"
-    if "lever.co" in host:
+    if _host_matches_domain(host, "lever.co"):
         return "Company Website"
-    if "workdayjobs.com" in host or "myworkdayjobs.com" in host:
+    if _host_matches_any_domain(host, ("workdayjobs.com", "myworkdayjobs.com")):
         return "Company Website"
     if host:
         return "Company Website"
     return "Other"
+
+
+def _normalized_hostname(url: str) -> str:
+    try:
+        host = urlsplit(url or "").hostname or ""
+    except ValueError:
+        return ""
+    return host.strip().lower().rstrip(".")
+
+
+def _host_matches_domain(host: str, domain: str) -> bool:
+    normalized_host = (host or "").strip().lower().rstrip(".")
+    normalized_domain = domain.strip().lower().rstrip(".")
+    return normalized_host == normalized_domain or normalized_host.endswith("." + normalized_domain)
+
+
+def _host_matches_any_domain(host: str, domains: tuple[str, ...]) -> bool:
+    return any(_host_matches_domain(host, domain) for domain in domains)
 
 
 def _detect_work_mode(raw_text: str) -> str:
@@ -148,22 +177,63 @@ def _first_company_like_line(lines: list[str], job_title: str) -> str:
 
 
 def _first_location_like_line(lines: list[str]) -> str:
-    for line in lines:
-        match = re.search(
-            r"([A-Z][A-Za-z.' -]+,\s*(?:Germany|Deutschland|Austria|Switzerland|Remote))",
-            line,
-        )
-        if match:
-            return _clean_field(match.group(1))
-    for line in lines:
+    bounded_lines = lines[:MAX_LOCATION_LINES]
+    for line in bounded_lines:
+        location = _parse_location_line(line)
+        if location:
+            return location
+    for line in bounded_lines:
+        if len(line) > MAX_LOCATION_LINE_LENGTH:
+            continue
         if _looks_like_location(line):
             return line
     return ""
 
 
+def _parse_location_line(line: str) -> str:
+    line = _clean_field(line)
+    if not line or len(line) > MAX_LOCATION_LINE_LENGTH:
+        return ""
+
+    if line.casefold() == "remote":
+        return "Remote"
+
+    city, separator, suffix = line.rpartition(",")
+    if not separator:
+        return ""
+
+    city = _clean_field(city)
+    suffix = _clean_field(suffix)
+    if not city or len(city) > MAX_LOCATION_CITY_LENGTH:
+        return ""
+    if suffix.casefold() not in LOCATION_SUFFIXES:
+        return ""
+    if not _is_safe_location_city(city):
+        return ""
+
+    return _clean_field(f"{city}, {suffix}")
+
+
+def _is_safe_location_city(value: str) -> bool:
+    return all(char.isalpha() or char.isdigit() or char in " .'/-" for char in value)
+
+
 def _looks_like_location(value: str) -> bool:
-    lower = value.lower()
-    return any(token in lower for token in ("germany", "deutschland", "hamburg", "berlin", "munich", "remote"))
+    value = _clean_field(value)
+    if len(value) > MAX_LOCATION_LINE_LENGTH:
+        return False
+    if _parse_location_line(value):
+        return True
+    return value.casefold() in {
+        "germany",
+        "deutschland",
+        "austria",
+        "switzerland",
+        "hamburg",
+        "berlin",
+        "munich",
+        "remote",
+    }
 
 
 def _extract_salary(raw_text: str) -> str:
