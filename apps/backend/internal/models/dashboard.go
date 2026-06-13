@@ -5,12 +5,22 @@ type DashboardGroupCount struct {
 	Count int64  `json:"count"`
 }
 
+type DashboardPipelineBreakdown struct {
+	ActivePipeline int64 `json:"active"`
+	Interviews     int64 `json:"interviews"`
+	Offers         int64 `json:"offers"`
+	Closed         int64 `json:"closed"`
+}
+
 type DashboardAnalytics struct {
 	TotalApplications    int64   `json:"total_applications"`
 	ActiveApplications   int64   `json:"active_applications"`
 	ClosedApplications   int64   `json:"closed_applications"`
 	Saved                int64   `json:"saved"`
 	Applied              int64   `json:"applied"`
+	InProgress           int64   `json:"in_progress"`
+	Interview            int64   `json:"interview"`
+	FollowUp             int64   `json:"follow_up"`
 	RecruiterContacted   int64   `json:"recruiter_contacted"`
 	InterviewScheduled   int64   `json:"interview_scheduled"`
 	TechnicalInterview   int64   `json:"technical_interview"`
@@ -27,9 +37,12 @@ type DashboardAnalytics struct {
 	OfferRatePercent     float64 `json:"offer_rate_percent"`
 	RejectionRatePercent float64 `json:"rejection_rate_percent"`
 
-	ByStatus    []DashboardGroupCount `json:"by_status"`
-	BySource    []DashboardGroupCount `json:"by_source"`
-	ByPriority  []DashboardGroupCount `json:"by_priority"`
-	ByWorkMode  []DashboardGroupCount `json:"by_work_mode"`
-	ByCVVersion []DashboardGroupCount `json:"by_cv_version"`
+	StatusCounts         map[string]int64           `json:"status_counts"`
+	PipelineBreakdown    DashboardPipelineBreakdown `json:"pipeline_breakdown"`
+	ApplicationsOverTime []DashboardGroupCount      `json:"applications_over_time"`
+	ByStatus             []DashboardGroupCount      `json:"by_status"`
+	BySource             []DashboardGroupCount      `json:"by_source"`
+	ByPriority           []DashboardGroupCount      `json:"by_priority"`
+	ByWorkMode           []DashboardGroupCount      `json:"by_work_mode"`
+	ByCVVersion          []DashboardGroupCount      `json:"by_cv_version"`
 }

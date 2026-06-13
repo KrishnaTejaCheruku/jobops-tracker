@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import CollapsibleCard from "./CollapsibleCard";
 
 export default function CSVDataPanel({
   exportUrl,
@@ -33,22 +34,14 @@ export default function CSVDataPanel({
   }
 
   return (
-    <section className="card cv-card">
-      <div className="card-header">
-        <div>
-          <p className="section-kicker">Data portability</p>
-          <h2>CSV Import / Export</h2>
-          <p className="muted">
-            Export applications for backup or spreadsheet review. Import creates new rows,
-            updates duplicates, and skips identical records.
-          </p>
-        </div>
-
-        <a className="btn btn-soft" href={exportUrl}>
-          Export CSV
-        </a>
-      </div>
-
+    <CollapsibleCard
+      id="csv-import-export"
+      className="card cv-card"
+      kicker="Data portability"
+      title="CSV Import / Export"
+      description="Export applications for backup or spreadsheet review. Import creates new rows, updates duplicates, and skips identical records."
+      action={<a className="btn btn-soft" href={exportUrl}>Export CSV</a>}
+    >
       <form className="cv-version-form" onSubmit={handleSubmit}>
         <label>
           CSV File
@@ -95,6 +88,6 @@ export default function CSVDataPanel({
           </article>
         </div>
       )}
-    </section>
+    </CollapsibleCard>
   );
 }

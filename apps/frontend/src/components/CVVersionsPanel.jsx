@@ -1,4 +1,5 @@
 import React from "react";
+import CollapsibleCard from "./CollapsibleCard";
 
 export default function CVVersionsPanel({
   cvVersions,
@@ -10,22 +11,14 @@ export default function CVVersionsPanel({
   onRefresh,
 }) {
   return (
-    <section className="card cv-card">
-      <div className="card-header">
-        <div>
-          <p className="section-kicker">CV strategy</p>
-          <h2>CV Versions</h2>
-          <p className="muted">
-            Create reusable CV versions and link them to job applications.
-            {loading ? " Loading..." : ""}
-          </p>
-        </div>
-
-        <button type="button" className="btn btn-soft" onClick={onRefresh}>
-          Refresh CVs
-        </button>
-      </div>
-
+    <CollapsibleCard
+      id="cv-version-management"
+      className="card cv-card"
+      kicker="CV strategy"
+      title="CV Versions"
+      description={`Create reusable CV versions and link them to job applications.${loading ? " Loading..." : ""}`}
+      action={<button type="button" className="btn btn-soft" onClick={onRefresh}>Refresh CVs</button>}
+    >
       <form className="cv-version-form" onSubmit={onCreate}>
         <label>
           CV Name *
@@ -96,6 +89,6 @@ export default function CVVersionsPanel({
           ))}
         </div>
       )}
-    </section>
+    </CollapsibleCard>
   );
 }
