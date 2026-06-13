@@ -77,40 +77,19 @@ func TestSMTPOTPDeliveryRejectsRecipientHeaderInjection(t *testing.T) {
 }
 
 func TestSMTPOTPDeliveryRejectsSenderHeaderInjection(t *testing.T) {
-	tests := []struct {
-		name     string
-		delivery SMTPOTPDelivery
-	}{
-		{
-			name: "from address",
-			delivery: SMTPOTPDelivery{
-				Host: "smtp.example.com",
-				Port: 587,
-				From: "noreply@example.com\r\nBcc: attacker@example.com",
-			},
-		},
-		{
-			name: "from name",
-			delivery: SMTPOTPDelivery{
-				Host:     "smtp.example.com",
-				Port:     587,
-				From:     "noreply@example.com",
-				FromName: "JobOps\r\nBcc: attacker@example.com",
-			},
-		},
+	delivery := SMTPOTPDelivery{
+		Host: "smtp.example.com",
+		Port: 587,
+		From: "noreply@example.com\r\nBcc: attacker@example.com",
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := tt.delivery.DeliverOTP(context.Background(), "owner@example.com", "123456")
-			if err == nil {
-				t.Fatal("expected sender header injection to be rejected")
-			}
+	err := delivery.DeliverOTP(context.Background(), "owner@example.com", "123456")
+	if err == nil {
+		t.Fatal("expected sender header injection to be rejected")
+	}
 
-			if !strings.Contains(err.Error(), "sender configuration") {
-				t.Fatalf("expected sender configuration error, got %q", err.Error())
-			}
-		})
+	if !strings.Contains(err.Error(), "sender configuration") {
+		t.Fatalf("expected sender configuration error, got %q", err.Error())
 	}
 }
 
@@ -128,5 +107,111 @@ func TestSMTPOTPDeliveryRejectsInvalidRecipientEmail(t *testing.T) {
 
 	if !strings.Contains(err.Error(), "must be valid") {
 		t.Fatalf("expected valid email error, got %q", err.Error())
+	}
+}
+
+func TestSMTPOTPDeliveryBuildsSafeMessageHeaders(t *testing.T) {
+	delivery := SMTPOTPDelivery{
+		Host:     "smtp.example.com",
+		Port:     587,
+		From:     "noreply@example.com",
+		FromName: "JobOps Tracker",
+	}
+
+	message, err := delivery.message("owner@example.com", "123456", loginCodeSubject)
+	if err != nil {
+		t.Fatalf("expected message to build, got error: %v", err)
+	}
+
+	body := string(message)
+	assertHeaderCount(t, body, "From:", 1)
+	assertHeaderCount(t, body, "To:", 1)
+	assertHeaderCount(t, body, "Subject:", 1)
+
+	if !strings.Contains(body, "From: \"JobOps Tracker\" <noreply@example.com>") {
+		t.Fatalf("expected formatted From header, got:\n%s", body)
+	}
+	if !strings.Contains(body, "To: <owner@example.com>") {
+		t.Fatalf("expected formatted To header, got:\n%s", body)
+	}
+	if !strings.Contains(body, "Subject: Your JobOps Tracker login code") {
+		t.Fatalf("expected login subject, got:\n%s", body)
+	}
+	if !strings.Contains(body, "Your JobOps Tracker login code is 123456.") {
+		t.Fatalf("expected OTP body to be preserved, got:\n%s", body)
+	}
+}
+
+func TestSMTPOTPDeliverySanitizesDisplayNameAndSubjectHeaders(t *testing.T) {
+	delivery := SMTPOTPDelivery{
+		Host:     "smtp.example.com",
+		Port:     587,
+		From:     "noreply@example.com",
+		FromName: "JobOps\r\nBcc: attacker@example.com",
+	}
+
+	message, err := delivery.message(
+		"owner@example.com",
+		"123456",
+		"Your code\r\nBcc: attacker@example.com",
+	)
+	if err != nil {
+		t.Fatalf("expected sanitized message to build, got error: %v", err)
+	}
+
+	body := string(message)
+	assertHeaderCount(t, body, "From:", 1)
+	assertHeaderCount(t, body, "To:", 1)
+	assertHeaderCount(t, body, "Subject:", 1)
+
+	if strings.Contains(body, "\r\nBcc:") || strings.Contains(body, "\nBcc:") {
+		t.Fatalf("expected injected Bcc header to be removed, got:\n%s", body)
+	}
+	if !strings.Contains(body, "JobOpsBcc: attacker@example.com") {
+		t.Fatalf("expected display name text to be sanitized without a new header, got:\n%s", body)
+	}
+	if !strings.Contains(body, "Subject: Your codeBcc: attacker@example.com") {
+		t.Fatalf("expected subject text to be sanitized without a new header, got:\n%s", body)
+	}
+}
+
+func TestSMTPOTPDeliveryRejectsSenderAddressHeaderInjectionInMessage(t *testing.T) {
+	delivery := SMTPOTPDelivery{
+		Host: "smtp.example.com",
+		Port: 587,
+		From: "noreply@example.com\r\nBcc: attacker@example.com",
+	}
+
+	_, err := delivery.message("owner@example.com", "123456", loginCodeSubject)
+	if err == nil {
+		t.Fatal("expected sender address injection to be rejected")
+	}
+}
+
+func TestSMTPOTPDeliveryRejectsRecipientHeaderInjectionInMessage(t *testing.T) {
+	delivery := SMTPOTPDelivery{
+		Host: "smtp.example.com",
+		Port: 587,
+		From: "noreply@example.com",
+	}
+
+	_, err := delivery.message("owner@example.com\r\nBcc: attacker@example.com", "123456", loginCodeSubject)
+	if err == nil {
+		t.Fatal("expected recipient header injection to be rejected")
+	}
+}
+
+func assertHeaderCount(t *testing.T, message string, header string, expected int) {
+	t.Helper()
+
+	count := 0
+	for _, line := range strings.Split(message, "\r\n") {
+		if strings.HasPrefix(line, header) {
+			count++
+		}
+	}
+
+	if count != expected {
+		t.Fatalf("expected %d %s header(s), got %d in:\n%s", expected, header, count, message)
 	}
 }
