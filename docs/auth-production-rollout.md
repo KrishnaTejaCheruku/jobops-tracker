@@ -73,7 +73,7 @@ For temporary IP-only deployments, keep `AUTH_COOKIE_SECURE=false` until HTTPS i
 
 The active production Caddyfile returns `404` for common sensitive probe paths such as `/.env`, `/.git*`, `/backup*`, `/phpmyadmin*`, and WordPress scanner URLs before requests reach the frontend.
 
-Production serves both `jobops.me` and `www.jobops.me`. HTTP requests on both hosts redirect to HTTPS. While `JOBOPS_SITE_ADDRESS=:80` in a temporary IP-only deployment, the app intentionally serves the frontend for any host header on port 80. With a real domain, use `infra/caddy/Caddyfile.domain.example` as the Caddyfile shape if unknown hosts should return `404` and only `JOBOPS_SITE_ADDRESS` should serve the app.
+Production serves both `jobops.me` and `www.jobops.me`. HTTP requests on both hosts redirect to HTTPS when Caddy is configured with the real domains and ports 80/443. While `JOBOPS_SITE_ADDRESS=:80` in a temporary IP-only deployment, the app intentionally serves the frontend for any host header on port 80. With a real domain, use `infra/caddy/Caddyfile.domain.example` as the Caddyfile shape if unknown hosts should return `404` and only `JOBOPS_SITE_ADDRESS` should serve the app.
 
 The production Caddyfile sends this HSTS header on HTTPS responses:
 

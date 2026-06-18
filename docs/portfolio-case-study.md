@@ -1,86 +1,70 @@
-# JobOps Tracker Portfolio Case Study
+# Portfolio Case Study
 
-JobOps Tracker is a self-hosted job application tracker built to demonstrate full-stack product engineering and practical DevOps operations.
+JobOps Tracker is a product-style portfolio application that combines full-stack product work with practical DevOps operations.
 
 ## Problem
 
-Manual spreadsheet-based job tracking becomes difficult to maintain as applications, follow-ups, CV versions, recruiters, and status changes accumulate.
+Spreadsheet-based job tracking becomes hard to maintain when applications, follow-ups, CV versions, recruiter details, status changes, and outcomes accumulate.
 
-JobOps Tracker replaces that spreadsheet workflow with a private web application that supports structured tracking, analytics, import/export, and user-scoped data.
+## Implemented Product Scope
 
-## Product Scope
-
-Implemented product capabilities:
-
-- Passwordless OTP authentication
-- Private user-scoped job application data
-- Application CRUD with validation
-- Status history
-- Follow-up tracking
-- CV version tracking
-- Analytics dashboard
-- CSV import/export with duplicate handling
-- Light/dark theme support
+- Passwordless OTP authentication.
+- User-scoped application and CV data.
+- Application CRUD with validation.
+- Status history.
+- Follow-up tracking.
+- CV version tracking.
+- Dashboard analytics.
+- CSV import/export with duplicate handling.
+- Light/dark theme support.
+- Browser extension and OCR-assisted capture with review before save.
 
 ## Architecture
 
 The application is split into:
 
-- React/Vite frontend
-- Go/Gin backend API
-- PostgreSQL database
-- Caddy reverse proxy
-- Docker Compose production runtime
+- React/Vite frontend.
+- Go/Gin backend API.
+- PostgreSQL database.
+- Python/FastAPI OCR service.
+- Manifest V3 browser extension.
+- Caddy reverse proxy.
+- Docker Compose production runtime.
 
-Production runs on a Hetzner VPS behind Caddy with HTTPS, HTTP-to-HTTPS redirects, HSTS, and sensitive probe-path hardening.
+Optional deployment assets include raw Kubernetes manifests, a Helm chart, Ansible playbooks, and OpenTofu Hetzner scaffolding.
 
 ## Delivery Flow
 
-The delivery flow is designed to look like a small production system:
-
 1. Changes land through pull requests into protected `main`.
 2. GitHub Actions runs CI.
-3. Version tags such as `v0.6.0` trigger container image publishing.
-4. Backend and frontend images are pushed to GHCR.
-5. The VPS deploy pulls explicit pinned image tags.
-6. Production is verified with HTTPS checks, API health checks, and OTP login smoke tests.
-
-Current production images:
-
-```text
-ghcr.io/krishnatejacheruku/jobops-tracker-backend:v0.6.0
-ghcr.io/krishnatejacheruku/jobops-tracker-frontend:v0.6.0
-```
+3. `v*` tags publish backend and frontend images to GHCR.
+4. The VPS deploy pulls pinned backend/frontend images or builds from source.
+5. Production is verified with HTTPS checks, API health checks, and OTP login smoke tests.
 
 ## Operations
 
 Operational support includes:
 
-- Database migrations
-- Production backup and restore scripts
-- Dry-run maintenance for expired OTPs, expired sessions, and backup retention
-- Prometheus-compatible `/metrics`
-- Optional local Prometheus/Grafana monitoring stack
-- Production release and rollback runbook
-
-Rollback for normal releases is image-tag based: update `BACKEND_IMAGE` and `FRONTEND_IMAGE` to the previous known-good GHCR tag and rerun the deploy script.
+- Database migrations.
+- Backup and restore scripts.
+- Dry-run maintenance for expired OTPs, expired sessions, and backup retention.
+- Prometheus-compatible `/metrics`.
+- Optional local Prometheus/Grafana monitoring stack.
+- Production release and rollback runbooks.
 
 ## Security Practices
 
-Security-focused decisions:
+- Passwordless OTP authentication.
+- User-owned data model.
+- Secure auth cookie support for HTTPS production.
+- Configurable CORS allowlist.
+- OTP request throttling with `Retry-After`.
+- SMTP email header safety tests.
+- No production secrets in Git.
+- Immutable backend/frontend image tag deployment instead of `latest`.
+- Review-before-save capture workflow.
 
-- Passwordless OTP authentication
-- User-owned data model
-- Secure auth cookie support for HTTPS production
-- Configurable CORS allowlist
-- OTP request throttling with `Retry-After`
-- No production secrets in Git
-- GitHub branch protection
-- Dependabot/security alerts
-- Read-only deploy key guidance for VPS repository access
-- Immutable image tag deployment instead of `latest`
-
-## Current Production State
+## Current Live Surface
 
 Live domains:
 
@@ -89,19 +73,11 @@ https://jobops.me
 https://www.jobops.me
 ```
 
-Verified production behavior:
-
-```text
-HTTPS frontend returns 200
-API health returns database ok
-HSTS header is present
-OTP browser smoke test passed
-Production runs pinned v0.6.0 GHCR images
-```
+The repository documents production Compose and Caddy deployment for those domains. Always verify the current VPS environment before claiming a specific deployed image tag.
 
 ## Next Improvements
 
+- Add an OCR image publishing workflow if pinned OCR images are required.
 - Add production monitoring screenshots.
 - Add Alertmanager wiring if external alert delivery is needed.
-- Add public screenshots and architecture diagrams.
-- Add CV file upload and follow-up reminders.
+- Add CV file upload and reminder notifications.

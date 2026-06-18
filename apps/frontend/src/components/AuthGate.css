@@ -75,6 +75,7 @@
   gap: 26px;
 }
 
+.auth-nav a,
 .auth-nav button,
 .auth-top-actions button {
   border: 0;
@@ -83,6 +84,20 @@
   font: inherit;
   font-weight: 750;
   cursor: pointer;
+  text-decoration: none;
+}
+
+.auth-nav a:focus-visible,
+.auth-nav button:focus-visible,
+.auth-top-actions button:focus-visible,
+.auth-public-footer a:focus-visible,
+.auth-doc-grid a:focus-visible,
+.auth-doc-actions a:focus-visible,
+.auth-card:focus-visible,
+.auth-section:focus-visible {
+  outline: 3px solid rgba(111, 33, 79, 0.32);
+  outline-offset: 4px;
+  border-radius: 8px;
 }
 
 .auth-top-actions {
@@ -364,6 +379,165 @@
   box-shadow: 0 24px 70px rgba(39, 23, 47, 0.1);
 }
 
+.auth-section {
+  scroll-margin-top: 32px;
+  display: grid;
+  grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
+  gap: 42px;
+  align-items: start;
+  padding: 70px 84px;
+  border-top: 1px solid rgba(42, 30, 52, 0.08);
+}
+
+.auth-section-copy {
+  min-width: 0;
+}
+
+.auth-section-copy h2 {
+  margin: 0 0 18px;
+  color: #2b091d;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(34px, 3.5vw, 54px);
+  font-weight: 500;
+  line-height: 1.02;
+  letter-spacing: 0;
+}
+
+.auth-section-copy p:last-child {
+  max-width: 620px;
+  margin: 0;
+  color: #6f6677;
+  font-size: 17px;
+  font-weight: 650;
+  line-height: 1.65;
+}
+
+.auth-pillar-grid,
+.auth-feature-grid,
+.auth-security-list,
+.auth-doc-grid {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.auth-pillar-grid,
+.auth-feature-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.auth-pillar-grid article,
+.auth-feature-grid article,
+.auth-security-list article,
+.auth-doc-grid article {
+  min-width: 0;
+  border: 1px solid rgba(42, 30, 52, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.74);
+  padding: 18px;
+}
+
+.auth-pillar-grid strong,
+.auth-feature-grid strong,
+.auth-security-list strong,
+.auth-doc-grid h3 {
+  display: block;
+  margin: 0 0 8px;
+  color: #17111f;
+  font-size: 16px;
+}
+
+.auth-pillar-grid p,
+.auth-security-list p {
+  margin: 0;
+  color: #6f6677;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.55;
+}
+
+.auth-feature-grid article {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.auth-feature-grid span {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: #e8f7ed;
+  color: #166534;
+  font-size: 10px;
+  font-weight: 950;
+}
+
+.auth-security-list {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.auth-doc-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.auth-doc-grid article {
+  display: grid;
+  gap: 9px;
+}
+
+.auth-doc-grid h3 {
+  margin-bottom: 6px;
+}
+
+.auth-doc-grid a,
+.auth-doc-actions a,
+.auth-public-footer a {
+  color: #6f214f;
+  font-weight: 850;
+  text-decoration: none;
+}
+
+.auth-doc-grid a:hover,
+.auth-doc-actions a:hover,
+.auth-public-footer a:hover {
+  text-decoration: underline;
+}
+
+.auth-doc-actions {
+  grid-column: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: -24px;
+}
+
+.auth-doc-actions a {
+  border: 1px solid rgba(111, 33, 79, 0.14);
+  border-radius: 8px;
+  background: #f8eef3;
+  padding: 12px 14px;
+}
+
+.auth-public-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  padding: 28px 84px 34px;
+  border-top: 1px solid rgba(42, 30, 52, 0.08);
+  color: #6f6677;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.auth-public-footer span {
+  color: #17111f;
+  font-weight: 950;
+}
+
 .auth-preview-sidebar {
   display: grid;
   align-content: start;
@@ -568,6 +742,20 @@
   .auth-dashboard-preview {
     margin: 0 36px 48px;
   }
+
+  .auth-section {
+    grid-template-columns: 1fr;
+    padding: 54px 36px;
+  }
+
+  .auth-doc-actions {
+    grid-column: auto;
+    margin-top: 0;
+  }
+
+  .auth-public-footer {
+    padding: 26px 36px 34px;
+  }
 }
 
 @media (max-width: 760px) {
@@ -617,11 +805,22 @@
   }
 
   .auth-nav {
-    display: none;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .auth-nav a {
+    border: 1px solid rgba(42, 30, 52, 0.1);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.7);
+    padding: 8px 10px;
+    font-size: 14px;
   }
 
   .auth-top-actions {
-    display: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
   }
 
   .auth-product-copy h2 {
@@ -643,6 +842,32 @@
 
   .auth-dashboard-preview {
     display: none;
+  }
+
+  .auth-section {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    padding: 36px 18px;
+  }
+
+  .auth-section-copy h2 {
+    font-size: 30px;
+  }
+
+  .auth-section-copy p:last-child {
+    font-size: 15px;
+  }
+
+  .auth-pillar-grid,
+  .auth-feature-grid,
+  .auth-doc-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-public-footer {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 24px 18px 30px;
   }
 
   .auth-preview-metrics,

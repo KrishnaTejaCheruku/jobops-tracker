@@ -1,42 +1,56 @@
 # Auth Production Deployment Checklist
 
-Use this checklist before deploying authentication and ownership changes to the VPS.
+Use this checklist before deploying authentication or user-ownership changes.
 
-## Required migration order
+## Required Migrations
 
-Apply all existing migrations in order. The auth deployment specifically depends on:
+Authentication and ownership depend on:
 
-1. `apps/backend/migrations/006_add_auth_tables.sql`
-2. `apps/backend/migrations/007_add_user_ownership.sql`
-
-Do not deploy backend auth changes unless both migrations have been applied successfully.
-
-## Deployment rule
-
-Deploy frontend and backend auth changes together.
-
-Do not deploy the backend auth changes alone. The authenticated API requires the frontend
-auth gate and OTP flow to be deployed at the same time.
-
-## Pre-deployment backup
-
-Run a production backup before deployment.
-
-Confirm the backup artifact exists and is restorable before changing production services.
-
-## Post-deployment checks
-
-Verify the API health endpoint:
-
-```bash
-curl http://94.130.75.66/api/health
+```text
+apps/backend/migrations/006_add_auth_tables.sql
+apps/backend/migrations/007_add_user_ownership.sql
 ```
 
-Then browser-test OTP login on the VPS:
+Apply migrations before exposing an auth-protected backend.
 
-1. Open the production frontend.
+## Deployment Rule
+
+Deploy frontend and backend authentication changes together. The backend protects `/applications`, `/cv-versions`, and `/dashboard/analytics`; the frontend must include the auth gate and OTP flow.
+
+## Pre-Deployment Backup
+
+```bash
+./scripts/prod-backup.sh .env.production
+```
+
+Confirm the backup file exists and is non-empty.
+
+## Environment
+
+Production should use:
+
+```text
+APP_ENV=production
+AUTH_SECRET=<long random secret>
+AUTH_COOKIE_SECURE=true
+OTP_DELIVERY_MODE=smtp
+CORS_ALLOWED_ORIGINS=https://jobops.me,https://www.jobops.me
+```
+
+SMTP variables must be configured before public OTP login is enabled.
+
+## Post-Deployment Checks
+
+```bash
+curl https://jobops.me/api/health
+curl https://www.jobops.me/api/health
+```
+
+Then browser-test:
+
+1. Open `https://jobops.me`.
 2. Request an OTP.
-3. Verify the OTP delivery path for production.
+3. Confirm SMTP delivery.
 4. Complete login.
-5. Confirm the dashboard loads only the authenticated user's applications.
-6. Confirm logout returns to the auth gate.
+5. Confirm the dashboard loads only the authenticated user's data.
+6. Log out and confirm the auth gate appears.
