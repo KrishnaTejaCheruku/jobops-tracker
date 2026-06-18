@@ -1,5 +1,5 @@
 describe("auth gate", () => {
-  it("shows passwordless login before a session exists", () => {
+  function visitLoggedOut() {
     cy.intercept("GET", "http://localhost:8000/auth/me", {
       statusCode: 401,
       body: { error: "authentication required" },
@@ -7,6 +7,10 @@ describe("auth gate", () => {
 
     cy.visit("/");
     cy.wait("@currentUser");
+  }
+
+  it("shows passwordless login before a session exists", () => {
+    visitLoggedOut();
 
     cy.contains("Welcome back").should("be.visible");
     cy.get("#auth-email").should("be.visible");
@@ -14,15 +18,30 @@ describe("auth gate", () => {
     cy.contains("JobOps Tracker").should("be.visible");
   });
 
+  it("navigates public landing sections from the top nav", () => {
+    visitLoggedOut();
+
+    [
+      ["Product", "product", "Open-source tracking"],
+      ["Features", "features", "Implemented features"],
+      ["Security", "security", "Security behavior"],
+      ["Docs", "docs", "Repository documentation"],
+    ].forEach(([label, id, heading]) => {
+      cy.contains("nav[aria-label='Product sections'] a", label).click();
+      cy.location("hash").should("eq", `#${id}`);
+      cy.get(`#${id}`).contains(heading).should("be.visible");
+      cy.get(`#${id}`).then(($section) => {
+        const rect = $section[0].getBoundingClientRect();
+
+        expect(rect.top, `${id} section top`).to.be.lessThan(180);
+        expect(rect.bottom, `${id} section bottom`).to.be.greaterThan(120);
+      });
+    });
+  });
+
   it("fits the login page within a mobile viewport", () => {
     cy.viewport(390, 844);
-    cy.intercept("GET", "http://localhost:8000/auth/me", {
-      statusCode: 401,
-      body: { error: "authentication required" },
-    }).as("currentUser");
-
-    cy.visit("/");
-    cy.wait("@currentUser");
+    visitLoggedOut();
 
     cy.document().then((doc) => {
       const root = doc.documentElement;
