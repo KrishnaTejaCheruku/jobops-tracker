@@ -330,52 +330,6 @@ export default function AuthGate({ children }) {
             </div>
           </div>
 
-          <div className="auth-dashboard-preview" aria-hidden="true">
-            <aside className="auth-preview-sidebar">
-              <div className="auth-preview-brand">
-                <img src={jobopsLogo} alt="" />
-                <span>JobOps Tracker</span>
-              </div>
-              <span className="active">Overview</span>
-              <span>Applications</span>
-              <span>Follow-ups</span>
-              <span>CV Versions</span>
-              <span>Analytics</span>
-            </aside>
-
-            <div className="auth-preview-main">
-              <div className="auth-preview-header">
-                <div>
-                  <h3>Good morning, Kris</h3>
-                  <p>Here is what is happening with your job search.</p>
-                </div>
-                <button type="button">New application</button>
-              </div>
-
-              <div className="auth-preview-metrics">
-                <article><span>Applications</span><strong>36</strong></article>
-                <article><span>Interviews</span><strong>8</strong></article>
-                <article><span>Follow-ups</span><strong>14</strong></article>
-                <article><span>Response rate</span><strong>28%</strong></article>
-              </div>
-
-              <div className="auth-preview-lists">
-                <div>
-                  <h4>Recent applications</h4>
-                  <p>Senior Product Manager <span>Interview</span></p>
-                  <p>Product Operations Lead <span>Follow-up</span></p>
-                  <p>Growth Manager <span>Applied</span></p>
-                </div>
-                <div>
-                  <h4>Follow-up due</h4>
-                  <p>Technical interview follow-up <span>Today</span></p>
-                  <p>Recruiter check-in <span>Tomorrow</span></p>
-                  <p>Case study submission <span>May 19</span></p>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <section className="auth-section auth-product-section" id="product" tabIndex="-1">
             <div className="auth-section-copy">
               <p className="auth-kicker">Product</p>
