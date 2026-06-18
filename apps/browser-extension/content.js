@@ -21,6 +21,10 @@
   }
 
   function collectVisibleText() {
+    if (!document.body) {
+      return "";
+    }
+
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
       acceptNode(node) {
         const text = node.nodeValue.replace(/\s+/g, " ").trim();
@@ -38,8 +42,9 @@
     while (node && total < MAX_VISIBLE_TEXT) {
       const text = node.nodeValue.replace(/\s+/g, " ").trim();
       const remaining = MAX_VISIBLE_TEXT - total;
-      parts.push(text.slice(0, remaining));
-      total += text.length + 1;
+      const chunk = text.slice(0, remaining);
+      parts.push(chunk);
+      total += chunk.length + 1;
       node = walker.nextNode();
     }
 

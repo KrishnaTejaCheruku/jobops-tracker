@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="JobOps Capture">
+  <rect width="128" height="128" rx="24" fill="#0f172a"/>
+  <rect x="18" y="24" width="92" height="80" rx="14" fill="#ffffff"/>
+  <path d="M38 42h52M38 58h38M38 74h52" fill="none" stroke="#1464f4" stroke-width="8" stroke-linecap="round"/>
+  <path d="M84 84l12 12 18-24" fill="none" stroke="#16a34a" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
