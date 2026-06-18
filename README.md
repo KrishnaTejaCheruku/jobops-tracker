@@ -1,93 +1,87 @@
 # JobOps Tracker
 
-JobOps Tracker is an open-source, self-hosted job application tracking platform for DevOps engineers and cloud professionals.
+JobOps Tracker is a private, open-source workspace for organizing job applications, CV versions, follow-ups, interview progress, outcomes, and CSV data without relying on spreadsheets.
 
-Live site:
+Live site: [https://jobops.me](https://jobops.me)
 
-```text
-https://jobops.me
-https://www.jobops.me
+GitHub repository: [KrishnaTejaCheruku/jobops-tracker](https://github.com/KrishnaTejaCheruku/jobops-tracker)
+
+## Verified Features
+
+- Passwordless OTP authentication with HttpOnly session cookies.
+- User-scoped application, CV version, dashboard, and CSV data.
+- Application CRUD with validation, search, filters, sorting, and pagination.
+- Status history, follow-up tracking, priority, source, work mode, dates, recruiter fields, and notes.
+- CV version tracking and application-to-CV association.
+- Dashboard analytics, pipeline breakdown, follow-up summaries, and responsive dashboard views.
+- CSV import/export with duplicate detection, update, skip, and error reporting.
+- Manual URL capture and browser-extension capture with OCR-assisted extraction.
+- Review-before-save capture workflow; OCR extraction does not automatically write to the database.
+- Light/dark theme support.
+- Docker Compose development and production files, Caddy reverse proxy, PostgreSQL migrations, backup/restore scripts, Kubernetes manifests, Helm chart, Ansible, and OpenTofu scaffolds.
+
+## Architecture
+
+The repository contains a React/Vite frontend, Go/Gin API, PostgreSQL database, optional Python/FastAPI OCR service, Manifest V3 browser extension, Docker Compose runtime, Caddy reverse proxy, and optional Kubernetes/Helm/Ansible/OpenTofu deployment assets.
+
+See [Architecture](docs/architecture.md) for the component diagram and implementation details.
+
+## Technology Stack
+
+- Frontend: React 19, Vite, Cypress.
+- Backend: Go, Gin, pgx, PostgreSQL.
+- Capture OCR service: FastAPI, PaddleOCR, Pillow.
+- Browser extension: Manifest V3, local scripts, Node test runner.
+- Infrastructure: Docker Compose, Caddy, Helm, Kubernetes manifests, Ansible, OpenTofu.
+- CI/CD: GitHub Actions for Go tests, frontend build/Cypress, extension validation, Docker builds, Helm lint/template, image publishing on tags, and manual VPS deploy workflow.
+
+## Quick Start
+
+```bash
+cp .env.example .env
+docker compose -f infra/docker/docker-compose.yml up -d --build
 ```
 
-It replaces manual Excel-based job tracking with a modern application dashboard for job applications, CV versions, follow-ups, interviews, and job-search analytics.
-
-## Why this project exists
-
-Tracking job applications manually in spreadsheets becomes messy quickly. JobOps Tracker provides a structured, self-hosted alternative that can run locally using Docker and later on Kubernetes.
-
-The project is also designed as a cloud-native DevOps portfolio project using:
-
-- Docker
-- Kubernetes
-- Helm
-- OpenTofu / Terraform-style IaC
-- Ansible
-- PostgreSQL
-- Go
-- React
-- Caddy
-
-## Production
-
-The live deployment runs on a Hetzner VPS with Docker Compose, Caddy, PostgreSQL, and pinned GHCR images.
-
-Current production release:
+Open:
 
 ```text
-Backend:  ghcr.io/krishnatejacheruku/jobops-tracker-backend:v0.6.0
-Frontend: ghcr.io/krishnatejacheruku/jobops-tracker-frontend:v0.6.0
-Domains:  https://jobops.me, https://www.jobops.me
+Frontend: http://localhost:5173
+Backend:  http://localhost:8000/health
+OCR:      http://localhost:8090/health
 ```
 
-Release flow:
+Development OTP delivery defaults to log/debug mode. The frontend displays the development OTP returned by the API when `APP_ENV` is not `production`.
 
-1. Merge changes to protected `main` through pull requests.
-2. Tag a release such as `v0.6.0`.
-3. GitHub Actions publishes backend and frontend images to GHCR.
-4. The VPS pulls the pinned image tags with `JOBOPS_DEPLOY_MODE=pull`.
-5. Production is verified with HTTPS, API health checks, and an OTP login smoke test.
+## Documentation
 
-## Product Features
+Start with [docs/README.md](docs/README.md).
 
-- Passwordless OTP authentication
-- Private, user-scoped application data
-- Job application CRUD
-- Application statuses, priorities, sources, locations, and work modes
-- Applied-date validation and follow-up tracking
-- CV version tracking
-- Status history
-- Analytics dashboard
-- CSV import/export
-- Duplicate detection during CSV import
-- Light/dark theme toggle
-- Production HTTPS deployment
+Core guides:
 
-## Platform Features
+- [Product guide](docs/product-guide.md)
+- [Local development](docs/local-development.md)
+- [API reference](docs/api.md)
+- [Architecture](docs/architecture.md)
+- [Browser extension](docs/browser-extension.md)
+- [OCR capture service](docs/ocr-capture-service.md)
+- [Production deployment](docs/production-deployment.md)
+- [Backup and restore](docs/backup-restore.md)
+- [Security](docs/security.md)
+- [Testing](docs/testing.md)
+- [Troubleshooting](docs/troubleshooting.md)
 
-- Docker Compose local and production environments
-- Caddy reverse proxy with HTTPS, HTTP-to-HTTPS redirects, HSTS, and probe-path hardening
-- PostgreSQL migrations, backup, restore, and health-check scripts
-- GitHub Actions CI and image publishing
-- Manual VPS deploy workflow
-- GitHub hardening and production release runbook
-- Pinned GHCR image production deployment
-- Ansible VPS bootstrap/deploy automation
-- Kubernetes manifests and Helm chart
-- OpenTofu Hetzner scaffold
+## Security Note
+
+Security-sensitive behavior is documented in [docs/security.md](docs/security.md). Report vulnerabilities through [SECURITY.md](SECURITY.md). Do not commit production secrets, SMTP credentials, database passwords, private keys, or tokens.
+
+## Contributing
+
+Use feature branches and pull requests into protected `main`. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Project Status
 
-Production deployment is live at `https://jobops.me` and `https://www.jobops.me` with HTTPS, HTTP-to-HTTPS redirects, HSTS, passwordless OTP authentication, user-scoped application data, CSV import/export, analytics, Docker Compose deployment, Caddy reverse proxy, PostgreSQL backups, and pinned `v0.6.0` GHCR images.
-
-Operational docs:
-
-- [Production release runbook](docs/production-release-runbook.md)
-- [Monitoring guide](docs/monitoring.md)
-- [Backup and restore guide](docs/backup-restore.md)
-- [Portfolio case study](docs/portfolio-case-study.md)
-
-Next planned operations phase: production monitoring screenshots, Alertmanager wiring if needed, and a portfolio case-study writeup.
+The project is a product-style open-source portfolio application. The live deployment is available at `https://jobops.me`; deployment changes must still go through review and must not be pushed directly to `main`.
 
 ## License
 
-MIT License.
+[MIT License](LICENSE).
