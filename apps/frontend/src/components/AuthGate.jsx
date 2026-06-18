@@ -1,4 +1,4 @@
-import { cloneElement, isValidElement, useEffect, useMemo, useState } from "react";
+import { cloneElement, isValidElement, useEffect, useMemo, useRef, useState } from "react";
 import {
   getCurrentUser,
   logoutUser,
@@ -18,6 +18,9 @@ export default function AuthGate({ children }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const authCardRef = useRef(null);
+  const emailInputRef = useRef(null);
+  const otpInputRef = useRef(null);
 
   const normalizedEmail = useMemo(() => email.trim().toLowerCase(), [email]);
 
@@ -48,6 +51,55 @@ export default function AuthGate({ children }) {
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (isLoading || user || !window.location.hash) {
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      let hashID = window.location.hash.slice(1);
+      try {
+        hashID = decodeURIComponent(hashID);
+      } catch {
+        hashID = "";
+      }
+      const target = document.getElementById(hashID);
+      target?.scrollIntoView({ block: "start" });
+    });
+  }, [isLoading, user]);
+
+  function focusAuthForm() {
+    authCardRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+
+    window.requestAnimationFrame(() => {
+      if (step === "otp") {
+        otpInputRef.current?.focus({ preventScroll: true });
+        return;
+      }
+
+      emailInputRef.current?.focus({ preventScroll: true });
+    });
+  }
+
+  function handleSectionLink(event, id) {
+    event.preventDefault();
+    const target = document.getElementById(id);
+
+    if (!target) {
+      return;
+    }
+
+    window.history.pushState(null, "", `#${id}`);
+    target.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+    target.focus({ preventScroll: true });
+  }
 
   async function handleRequestOTP(event) {
     event.preventDefault();
@@ -143,15 +195,15 @@ export default function AuthGate({ children }) {
             </div>
 
             <nav className="auth-nav" aria-label="Product sections">
-              <button type="button">Product</button>
-              <button type="button">Features</button>
-              <button type="button">Security</button>
-              <button type="button">Docs</button>
+              <a href="#product" onClick={(event) => handleSectionLink(event, "product")}>Product</a>
+              <a href="#features" onClick={(event) => handleSectionLink(event, "features")}>Features</a>
+              <a href="#security" onClick={(event) => handleSectionLink(event, "security")}>Security</a>
+              <a href="#docs" onClick={(event) => handleSectionLink(event, "docs")}>Docs</a>
             </nav>
 
             <div className="auth-top-actions">
-              <button type="button">Sign in</button>
-              <button type="button" className="auth-continue-button">
+              <button type="button" onClick={focusAuthForm}>Sign in</button>
+              <button type="button" className="auth-continue-button" onClick={focusAuthForm}>
                 Continue
               </button>
             </div>
@@ -195,7 +247,7 @@ export default function AuthGate({ children }) {
               </div>
             </div>
 
-            <div className="auth-card">
+            <div className="auth-card" ref={authCardRef} tabIndex="-1">
               <div className="auth-copy">
                 <div className="auth-tabs" aria-hidden="true">
                   <span className={step === "email" ? "active" : ""}>Email sign in</span>
@@ -214,6 +266,7 @@ export default function AuthGate({ children }) {
                 <form className="auth-form" onSubmit={handleRequestOTP}>
                   <label htmlFor="auth-email">Email address</label>
                   <input
+                    ref={emailInputRef}
                     id="auth-email"
                     type="email"
                     placeholder="you@example.com"
@@ -250,6 +303,7 @@ export default function AuthGate({ children }) {
                   </div>
 
                   <input
+                    ref={otpInputRef}
                     id="auth-otp"
                     type="text"
                     inputMode="numeric"
@@ -337,6 +391,152 @@ export default function AuthGate({ children }) {
               </div>
             </div>
           </div>
+
+          <section className="auth-section auth-product-section" id="product" tabIndex="-1">
+            <div className="auth-section-copy">
+              <p className="auth-kicker">Product</p>
+              <h2>Open-source tracking for a real job search pipeline.</h2>
+              <p>
+                JobOps Tracker is a private, open-source workspace for organizing
+                job applications, CV versions, follow-ups, interview progress, and
+                outcomes without relying on spreadsheets.
+              </p>
+            </div>
+
+            <div className="auth-pillar-grid">
+              <article>
+                <strong>Application pipeline</strong>
+                <p>Create, update, filter, sort, paginate, and review applications with status history.</p>
+              </article>
+              <article>
+                <strong>CV version management</strong>
+                <p>Track reusable CV versions and associate them with saved applications.</p>
+              </article>
+              <article>
+                <strong>Follow-up workflow</strong>
+                <p>Record follow-up dates and surface overdue, due-today, and upcoming actions.</p>
+              </article>
+              <article>
+                <strong>Capture and review</strong>
+                <p>Use CSV import, manual URL capture, or the browser extension with OCR-assisted extraction before saving.</p>
+              </article>
+            </div>
+          </section>
+
+          <section className="auth-section" id="features" tabIndex="-1">
+            <div className="auth-section-copy">
+              <p className="auth-kicker">Features</p>
+              <h2>Implemented features from the current repository.</h2>
+              <p>
+                The public landing page lists only behavior backed by the current
+                frontend, backend, extension, OCR service, infrastructure, and tests.
+              </p>
+            </div>
+
+            <div className="auth-feature-grid">
+              {[
+                "Passwordless OTP authentication",
+                "User-scoped application and CV records",
+                "Application CRUD with validation",
+                "Search, filters, sorting, and pagination",
+                "Status history and follow-up tracking",
+                "Dashboard analytics and responsive pipeline views",
+                "CSV import/export with duplicate handling",
+                "Dark/light mode",
+                "Browser extension capture",
+                "OCR-assisted extraction with review before save",
+                "Docker Compose development and production files",
+                "Kubernetes manifests, Helm chart, Ansible, and OpenTofu scaffolds",
+              ].map((feature) => (
+                <article key={feature}>
+                  <span aria-hidden="true">OK</span>
+                  <strong>{feature}</strong>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="auth-section auth-security-section" id="security" tabIndex="-1">
+            <div className="auth-section-copy">
+              <p className="auth-kicker">Security</p>
+              <h2>Security behavior is visible in code and documentation.</h2>
+              <p>
+                JobOps is open source. Security-sensitive behavior is documented
+                and reviewable in the repository.
+              </p>
+            </div>
+
+            <div className="auth-security-list">
+              <article>
+                <strong>Authentication and sessions</strong>
+                <p>Passwordless OTP login, request throttling, hashed session tokens, HttpOnly cookies, and secure-cookie support for HTTPS production.</p>
+              </article>
+              <article>
+                <strong>User-owned data</strong>
+                <p>Protected application, CV, dashboard, and CSV endpoints use the authenticated user ID for repository queries.</p>
+              </article>
+              <article>
+                <strong>Capture safeguards</strong>
+                <p>The analyze endpoint is size-limited JSON, OCR extraction does not automatically write to the database, and users review captured fields before saving.</p>
+              </article>
+              <article>
+                <strong>Repository checks</strong>
+                <p>CI runs backend tests, frontend build and Cypress checks, extension validation, Docker image builds, and Helm rendering. Recent CodeQL findings are covered by focused regression tests.</p>
+              </article>
+            </div>
+          </section>
+
+          <section className="auth-section" id="docs" tabIndex="-1">
+            <div className="auth-section-copy">
+              <p className="auth-kicker">Docs</p>
+              <h2>Repository documentation for users, developers, and operators.</h2>
+              <p>
+                Start with the documentation index or go directly to the guide
+                that matches the work in front of you.
+              </p>
+            </div>
+
+            <div className="auth-doc-grid">
+              <article>
+                <h3>User guides</h3>
+                <a href="https://github.com/KrishnaTejaCheruku/jobops-tracker/blob/main/docs/product-guide.md">Product guide</a>
+                <a href="https://github.com/KrishnaTejaCheruku/jobops-tracker/blob/main/docs/browser-extension.md">Browser extension</a>
+                <a href="https://github.com/KrishnaTejaCheruku/jobops-tracker/blob/main/docs/csv-import-export.md">CSV import/export</a>
+              </article>
+              <article>
+                <h3>Developer guides</h3>
+                <a href="https://github.com/KrishnaTejaCheruku/jobops-tracker/blob/main/docs/local-development.md">Local development</a>
+                <a href="https://github.com/KrishnaTejaCheruku/jobops-tracker/blob/main/docs/api.md">API reference</a>
+                <a href="https://github.com/KrishnaTejaCheruku/jobops-tracker/blob/main/docs/testing.md">Testing</a>
+              </article>
+              <article>
+                <h3>Operations and deployment</h3>
+                <a href="https://github.com/KrishnaTejaCheruku/jobops-tracker/blob/main/docs/production-deployment.md">Production deployment</a>
+                <a href="https://github.com/KrishnaTejaCheruku/jobops-tracker/blob/main/docs/backup-restore.md">Backup and restore</a>
+                <a href="https://github.com/KrishnaTejaCheruku/jobops-tracker/blob/main/docs/monitoring.md">Monitoring</a>
+              </article>
+              <article>
+                <h3>Security</h3>
+                <a href="https://github.com/KrishnaTejaCheruku/jobops-tracker/blob/main/docs/security.md">Security guide</a>
+                <a href="https://github.com/KrishnaTejaCheruku/jobops-tracker/blob/main/SECURITY.md">Responsible disclosure</a>
+                <a href="https://github.com/KrishnaTejaCheruku/jobops-tracker">GitHub repository</a>
+              </article>
+            </div>
+
+            <div className="auth-doc-actions">
+              <a href="https://jobops.me">Live site: https://jobops.me</a>
+              <a href="https://github.com/KrishnaTejaCheruku/jobops-tracker">GitHub: jobops-tracker</a>
+            </div>
+          </section>
+
+          <footer className="auth-public-footer">
+            <span>JobOps Tracker</span>
+            <a href="https://jobops.me">Live website</a>
+            <a href="https://github.com/KrishnaTejaCheruku/jobops-tracker">GitHub repository</a>
+            <a href="#docs" onClick={(event) => handleSectionLink(event, "docs")}>Documentation</a>
+            <a href="#security" onClick={(event) => handleSectionLink(event, "security")}>Security</a>
+            <a href="https://github.com/KrishnaTejaCheruku/jobops-tracker/blob/main/LICENSE">Open source</a>
+          </footer>
         </section>
       </div>
     );
