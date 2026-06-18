@@ -85,22 +85,6 @@ export default function AuthGate({ children }) {
     });
   }
 
-  function handleSectionLink(event, id) {
-    event.preventDefault();
-    const target = document.getElementById(id);
-
-    if (!target) {
-      return;
-    }
-
-    window.history.pushState(null, "", `#${id}`);
-    target.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
-    target.focus({ preventScroll: true });
-  }
-
   async function handleRequestOTP(event) {
     event.preventDefault();
 
@@ -195,10 +179,10 @@ export default function AuthGate({ children }) {
             </div>
 
             <nav className="auth-nav" aria-label="Product sections">
-              <a href="#product" onClick={(event) => handleSectionLink(event, "product")}>Product</a>
-              <a href="#features" onClick={(event) => handleSectionLink(event, "features")}>Features</a>
-              <a href="#security" onClick={(event) => handleSectionLink(event, "security")}>Security</a>
-              <a href="#docs" onClick={(event) => handleSectionLink(event, "docs")}>Docs</a>
+              <a href="#product">Product</a>
+              <a href="#features">Features</a>
+              <a href="#security">Security</a>
+              <a href="#docs">Docs</a>
             </nav>
 
             <div className="auth-top-actions">
@@ -533,8 +517,8 @@ export default function AuthGate({ children }) {
             <span>JobOps Tracker</span>
             <a href="https://jobops.me">Live website</a>
             <a href="https://github.com/KrishnaTejaCheruku/jobops-tracker">GitHub repository</a>
-            <a href="#docs" onClick={(event) => handleSectionLink(event, "docs")}>Documentation</a>
-            <a href="#security" onClick={(event) => handleSectionLink(event, "security")}>Security</a>
+            <a href="#docs">Documentation</a>
+            <a href="#security">Security</a>
             <a href="https://github.com/KrishnaTejaCheruku/jobops-tracker/blob/main/LICENSE">Open source</a>
           </footer>
         </section>
