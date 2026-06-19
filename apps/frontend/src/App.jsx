@@ -92,12 +92,6 @@ function DashboardSidebar({ user, onPipelineViewChange }) {
         <a href="#capture">Settings</a>
       </nav>
 
-      <div className="dashboard-helper-card">
-        <strong>Passwordless by design</strong>
-        <p>Secure magic link login.</p>
-        <span>Learn more -&gt;</span>
-      </div>
-
       <div className="dashboard-sidebar-user">
         <span>{user?.email?.charAt(0)?.toUpperCase() || "U"}</span>
         <div>
@@ -1040,9 +1034,6 @@ function AppContent({ user, onLogout, isLoggingOut }) {
             <a className="btn btn-soft" href={getApplicationsExportURL()}>
               Export
             </a>
-            <button type="button" className="dashboard-icon-button" aria-label="Notifications">
-              ○
-            </button>
             <span className="dashboard-avatar">{user?.email?.charAt(0)?.toUpperCase() || "U"}</span>
             <button
               type="button"
