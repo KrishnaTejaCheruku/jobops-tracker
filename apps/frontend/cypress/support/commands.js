@@ -43,7 +43,7 @@ function paginatedApplications(applications = []) {
 Cypress.Commands.add("stubAuthSession", (user) => {
   cy.intercept("GET", `${apiBaseUrl}/auth/me`, {
     statusCode: 200,
-    body: { user },
+    body: { user: { display_name: "Test User", ...user } },
   }).as("currentUser");
 });
 

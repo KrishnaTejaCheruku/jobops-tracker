@@ -5,6 +5,11 @@ const testUser = {
   email: "devops@example.com",
 };
 
+const namedTestUser = {
+  ...testUser,
+  display_name: "Teja",
+};
+
 const applicationsResponse = {
   items: [
     {
@@ -69,6 +74,14 @@ describe("authenticated dashboard", () => {
       body: { user: testUser },
     }).as("verifyOtp");
 
+    cy.intercept("PATCH", `${apiBaseUrl}/auth/profile`, (req) => {
+      expect(req.body).to.deep.equal({ display_name: "Teja" });
+      req.reply({
+        statusCode: 200,
+        body: { user: namedTestUser },
+      });
+    }).as("updateProfile");
+
     cy.intercept("GET", `${apiBaseUrl}/applications*`, {
       statusCode: 200,
       body: applicationsResponse,
@@ -113,10 +126,15 @@ describe("authenticated dashboard", () => {
         otp: "123456",
       });
 
+    cy.contains("How should I call you?").should("be.visible");
+    cy.get("#auth-display-name").type("Teja");
+    cy.contains("button", "Continue to JobOps").click();
+    cy.wait("@updateProfile");
+
     cy.wait(["@applications", "@cvVersions", "@analytics"]);
 
     cy.contains("devops@example.com").should("be.visible");
-    cy.contains("Good morning, devops").should("be.visible");
+    cy.contains("Good morning, Teja").should("be.visible");
     cy.contains("Pipeline snapshot").should("be.visible");
     cy.contains("Pipeline workspace")
       .parents(".pipeline-navigation")
@@ -153,7 +171,7 @@ describe("authenticated dashboard", () => {
 
     cy.intercept("GET", `${apiBaseUrl}/auth/me`, {
       statusCode: 200,
-      body: { user: testUser },
+      body: { user: namedTestUser },
     }).as("currentUser");
 
     cy.intercept("GET", `${apiBaseUrl}/applications*`, {

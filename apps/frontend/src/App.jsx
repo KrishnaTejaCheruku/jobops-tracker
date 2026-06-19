@@ -43,11 +43,7 @@ import {
 } from "./lib/capture";
 
 function getUserDisplayName(user) {
-  const email = String(user?.email || "").trim();
-
-  if (!email) return "";
-
-  return email.split("@")[0] || "";
+  return String(user?.display_name || "").trim();
 }
 
 function formatDashboardDate(value) {

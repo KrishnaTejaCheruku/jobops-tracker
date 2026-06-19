@@ -11,7 +11,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/KrishnaTejaCheruku/jobops-tracker/apps/backend/internal/middleware"
 	"github.com/KrishnaTejaCheruku/jobops-tracker/apps/backend/internal/models"
+	"github.com/KrishnaTejaCheruku/jobops-tracker/apps/backend/internal/repository"
 	"github.com/KrishnaTejaCheruku/jobops-tracker/apps/backend/internal/services"
 	"github.com/gin-gonic/gin"
 )
@@ -19,6 +21,7 @@ import (
 type authStore interface {
 	CreateOrGetUser(ctx context.Context, email string) (*models.AuthUser, error)
 	GetUserByEmail(ctx context.Context, email string) (*models.AuthUser, error)
+	UpdateUserDisplayName(ctx context.Context, userID int64, displayName string) (*models.AuthUser, error)
 	CreateOTP(ctx context.Context, userID int64, otpHash string, expiresAt time.Time, maxAttempts int) error
 	CountRecentOTPs(ctx context.Context, userID int64, since time.Time) (int, error)
 	GetLatestActiveOTP(ctx context.Context, userID int64) (*models.UserOTP, error)
@@ -271,9 +274,57 @@ func (h *AuthHandler) Me(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"user": gin.H{
-			"id":    session.UserID,
-			"email": session.Email,
+			"id":           session.UserID,
+			"email":        session.Email,
+			"display_name": session.DisplayName,
 		},
+	})
+}
+
+func (h *AuthHandler) UpdateProfile(c *gin.Context) {
+	userID, ok := middleware.CurrentUserID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "authentication required",
+		})
+		return
+	}
+
+	var req models.UpdateProfileRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid request body",
+		})
+		return
+	}
+
+	displayName, err := normalizeDisplayName(req.DisplayName)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "display name must be 1-80 characters",
+		})
+		return
+	}
+
+	user, err := h.authRepo.UpdateUserDisplayName(c.Request.Context(), userID, displayName)
+	if err != nil {
+		status := http.StatusInternalServerError
+		message := "failed to update profile"
+
+		if errors.Is(err, repository.ErrAuthRecordNotFound) {
+			status = http.StatusUnauthorized
+			message = "authentication required"
+		}
+
+		log.Printf("failed to update auth profile: %v", err)
+		c.JSON(status, gin.H{
+			"error": message,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.AuthUserResponse{
+		User: *user,
 	})
 }
 
@@ -333,6 +384,19 @@ func normalizeEmail(value string) (string, error) {
 	}
 
 	return normalized, nil
+}
+
+func normalizeDisplayName(value string) (string, error) {
+	displayName := strings.Join(strings.Fields(value), " ")
+	if displayName == "" {
+		return "", errors.New("empty display name")
+	}
+
+	if len([]rune(displayName)) > 80 {
+		return "", errors.New("display name too long")
+	}
+
+	return displayName, nil
 }
 
 func boolEnv(name string, defaultValue bool) bool {

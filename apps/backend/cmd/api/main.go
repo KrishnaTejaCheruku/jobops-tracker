@@ -107,6 +107,8 @@ func main() {
 	protected := router.Group("/")
 	protected.Use(authMiddleware)
 
+	protected.PATCH("/auth/profile", authHandler.UpdateProfile)
+
 	protected.GET("/applications", applicationHandler.ListApplications)
 	protected.POST("/applications", applicationHandler.CreateApplication)
 	protected.GET("/applications/export.csv", applicationHandler.ExportApplicationsCSV)

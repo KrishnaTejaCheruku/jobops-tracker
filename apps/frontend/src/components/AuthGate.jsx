@@ -3,6 +3,7 @@ import {
   getCurrentUser,
   logoutUser,
   requestOTP,
+  updateProfile,
   verifyOTP,
 } from "../lib/authApi";
 import jobopsLogo from "../assets/jobops_logo.png";
@@ -12,6 +13,7 @@ export default function AuthGate({ children }) {
   const [user, setUser] = useState(null);
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
+  const [displayName, setDisplayName] = useState("");
   const [debugOtp, setDebugOtp] = useState("");
   const [step, setStep] = useState("email");
   const [isLoading, setIsLoading] = useState(true);
@@ -21,8 +23,10 @@ export default function AuthGate({ children }) {
   const authCardRef = useRef(null);
   const emailInputRef = useRef(null);
   const otpInputRef = useRef(null);
+  const displayNameInputRef = useRef(null);
 
   const normalizedEmail = useMemo(() => email.trim().toLowerCase(), [email]);
+  const needsDisplayName = Boolean(user && !String(user.display_name || "").trim());
 
   useEffect(() => {
     let isMounted = true;
@@ -68,6 +72,17 @@ export default function AuthGate({ children }) {
       target?.scrollIntoView({ block: "start" });
     });
   }, [isLoading, user]);
+
+  useEffect(() => {
+    if (!needsDisplayName) {
+      return;
+    }
+
+    setDisplayName("");
+    window.requestAnimationFrame(() => {
+      displayNameInputRef.current?.focus();
+    });
+  }, [needsDisplayName]);
 
   function focusAuthForm() {
     authCardRef.current?.scrollIntoView({
@@ -140,6 +155,31 @@ export default function AuthGate({ children }) {
     }
   }
 
+  async function handleUpdateProfile(event) {
+    event.preventDefault();
+
+    const trimmedDisplayName = displayName.trim();
+    if (!trimmedDisplayName) {
+      setError("Enter the name you want JobOps to use.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError("");
+    setMessage("");
+
+    try {
+      const data = await updateProfile(trimmedDisplayName);
+
+      setUser(data.user);
+      setDisplayName(data.user?.display_name || "");
+    } catch (err) {
+      setError(err.message || "Failed to save your profile.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   async function handleLogout() {
     setIsSubmitting(true);
 
@@ -149,6 +189,7 @@ export default function AuthGate({ children }) {
       setUser(null);
       setEmail("");
       setOtp("");
+      setDisplayName("");
       setDebugOtp("");
       setStep("email");
       setMessage("");
@@ -484,6 +525,51 @@ export default function AuthGate({ children }) {
             </div>
           </section>
         </section>
+      </div>
+    );
+  }
+
+  if (needsDisplayName) {
+    return (
+      <div className="auth-page auth-profile-page">
+        <div className="auth-card auth-card-compact auth-profile-card">
+          <div className="auth-copy">
+            <p className="auth-kicker">One last step</p>
+            <h2>How should I call you?</h2>
+            <p>JobOps will use this name in your private workspace.</p>
+          </div>
+
+          <p className="auth-profile-email">{user.email}</p>
+
+          <form className="auth-form" onSubmit={handleUpdateProfile}>
+            <label htmlFor="auth-display-name">Preferred name</label>
+            <input
+              ref={displayNameInputRef}
+              id="auth-display-name"
+              type="text"
+              placeholder="Your name"
+              value={displayName}
+              autoComplete="given-name"
+              maxLength={80}
+              onChange={(event) => setDisplayName(event.target.value)}
+            />
+
+            <button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : "Continue to JobOps"}
+            </button>
+
+            <button
+              type="button"
+              className="auth-secondary-button"
+              disabled={isSubmitting}
+              onClick={handleLogout}
+            >
+              Use another email
+            </button>
+          </form>
+
+          {error && <div className="auth-error">{error}</div>}
+        </div>
       </div>
     );
   }
