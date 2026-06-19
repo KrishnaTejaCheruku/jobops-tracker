@@ -30,13 +30,14 @@ func (r *AuthRepository) CreateOrGetUser(ctx context.Context, email string) (*mo
 		VALUES ($1)
 		ON CONFLICT (email)
 		DO UPDATE SET updated_at = NOW()
-		RETURNING id, email, created_at, updated_at
+		RETURNING id, email, COALESCE(display_name, ''), created_at, updated_at
 	`
 
 	var user models.AuthUser
 	if err := r.db.QueryRow(ctx, query, normalizedEmail).Scan(
 		&user.ID,
 		&user.Email,
+		&user.DisplayName,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	); err != nil {
@@ -50,7 +51,7 @@ func (r *AuthRepository) GetUserByEmail(ctx context.Context, email string) (*mod
 	normalizedEmail := strings.ToLower(strings.TrimSpace(email))
 
 	query := `
-		SELECT id, email, created_at, updated_at
+		SELECT id, email, COALESCE(display_name, ''), created_at, updated_at
 		FROM users
 		WHERE email = $1
 	`
@@ -59,6 +60,7 @@ func (r *AuthRepository) GetUserByEmail(ctx context.Context, email string) (*mod
 	if err := r.db.QueryRow(ctx, query, normalizedEmail).Scan(
 		&user.ID,
 		&user.Email,
+		&user.DisplayName,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	); err != nil {
@@ -67,6 +69,33 @@ func (r *AuthRepository) GetUserByEmail(ctx context.Context, email string) (*mod
 		}
 
 		return nil, fmt.Errorf("get user by email: %w", err)
+	}
+
+	return &user, nil
+}
+
+func (r *AuthRepository) UpdateUserDisplayName(ctx context.Context, userID int64, displayName string) (*models.AuthUser, error) {
+	query := `
+		UPDATE users
+		SET display_name = $2,
+		    updated_at = NOW()
+		WHERE id = $1
+		RETURNING id, email, display_name, created_at, updated_at
+	`
+
+	var user models.AuthUser
+	if err := r.db.QueryRow(ctx, query, userID, strings.TrimSpace(displayName)).Scan(
+		&user.ID,
+		&user.Email,
+		&user.DisplayName,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrAuthRecordNotFound
+		}
+
+		return nil, fmt.Errorf("update user display name: %w", err)
 	}
 
 	return &user, nil
@@ -191,7 +220,7 @@ func (r *AuthRepository) CreateSession(ctx context.Context, userID int64, tokenH
 
 func (r *AuthRepository) GetAuthenticatedSession(ctx context.Context, tokenHash string) (*models.AuthenticatedSession, error) {
 	query := `
-		SELECT s.id, u.id, u.email, s.expires_at
+		SELECT s.id, u.id, u.email, COALESCE(u.display_name, ''), s.expires_at
 		FROM user_sessions s
 		INNER JOIN users u ON u.id = s.user_id
 		WHERE s.token_hash = $1
@@ -203,6 +232,7 @@ func (r *AuthRepository) GetAuthenticatedSession(ctx context.Context, tokenHash 
 		&session.SessionID,
 		&session.UserID,
 		&session.Email,
+		&session.DisplayName,
 		&session.ExpiresAt,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

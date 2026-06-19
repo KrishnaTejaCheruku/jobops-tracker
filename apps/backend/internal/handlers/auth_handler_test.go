@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/KrishnaTejaCheruku/jobops-tracker/apps/backend/internal/middleware"
 	"github.com/KrishnaTejaCheruku/jobops-tracker/apps/backend/internal/models"
 	"github.com/KrishnaTejaCheruku/jobops-tracker/apps/backend/internal/services"
 	"github.com/gin-gonic/gin"
@@ -21,6 +22,7 @@ type fakeAuthStore struct {
 	countRecentOTP int
 	countRecentErr error
 	createdOTP     string
+	updatedName    string
 }
 
 func (s *fakeAuthStore) CreateOrGetUser(_ context.Context, email string) (*models.AuthUser, error) {
@@ -37,6 +39,17 @@ func (s *fakeAuthStore) CreateOrGetUser(_ context.Context, email string) (*model
 
 func (s *fakeAuthStore) GetUserByEmail(_ context.Context, _ string) (*models.AuthUser, error) {
 	return nil, errors.New("not implemented")
+}
+
+func (s *fakeAuthStore) UpdateUserDisplayName(_ context.Context, _ int64, displayName string) (*models.AuthUser, error) {
+	s.updatedName = displayName
+
+	if s.user == nil {
+		s.user = &models.AuthUser{ID: 1, Email: "test@example.com"}
+	}
+
+	s.user.DisplayName = displayName
+	return s.user, nil
 }
 
 func (s *fakeAuthStore) CreateOTP(_ context.Context, _ int64, otpHash string, _ time.Time, _ int) error {
@@ -224,6 +237,51 @@ func TestRequestOTPRejectsRequestAtRateLimit(t *testing.T) {
 	}
 }
 
+func TestUpdateProfileStoresDisplayName(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	store := &fakeAuthStore{
+		user: &models.AuthUser{ID: 1, Email: "test@example.com"},
+	}
+	handler := NewAuthHandler(store, services.NewOTPServiceFromEnv(), nil)
+
+	response := updateProfile(t, handler, `{"display_name": "  Che   Teja  "}`)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d: %s", response.Code, response.Body.String())
+	}
+
+	var body models.AuthUserResponse
+	if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+
+	if body.User.DisplayName != "Che Teja" {
+		t.Fatalf("expected normalized display name, got %q", body.User.DisplayName)
+	}
+
+	if store.updatedName != "Che Teja" {
+		t.Fatalf("expected store to receive normalized display name, got %q", store.updatedName)
+	}
+}
+
+func TestUpdateProfileRejectsBlankDisplayName(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	store := &fakeAuthStore{}
+	handler := NewAuthHandler(store, services.NewOTPServiceFromEnv(), nil)
+
+	response := updateProfile(t, handler, `{"display_name": "   "}`)
+
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d: %s", response.Code, response.Body.String())
+	}
+
+	if store.updatedName != "" {
+		t.Fatalf("expected blank display name not to be stored, got %q", store.updatedName)
+	}
+}
+
 func requestOTP(t *testing.T, handler *AuthHandler, email string) *httptest.ResponseRecorder {
 	t.Helper()
 
@@ -232,6 +290,23 @@ func requestOTP(t *testing.T, handler *AuthHandler, email string) *httptest.Resp
 
 	body := bytes.NewBufferString(`{"email": "` + email + `"}`)
 	req := httptest.NewRequest(http.MethodPost, "/auth/request-otp", body)
+	req.Header.Set("Content-Type", "application/json")
+
+	response := httptest.NewRecorder()
+	router.ServeHTTP(response, req)
+	return response
+}
+
+func updateProfile(t *testing.T, handler *AuthHandler, payload string) *httptest.ResponseRecorder {
+	t.Helper()
+
+	router := gin.New()
+	router.PATCH("/auth/profile", func(c *gin.Context) {
+		c.Set(middleware.AuthUserIDKey, int64(1))
+		handler.UpdateProfile(c)
+	})
+
+	req := httptest.NewRequest(http.MethodPatch, "/auth/profile", bytes.NewBufferString(payload))
 	req.Header.Set("Content-Type", "application/json")
 
 	response := httptest.NewRecorder()

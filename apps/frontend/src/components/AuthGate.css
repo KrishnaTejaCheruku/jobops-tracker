@@ -221,6 +221,27 @@
   margin: auto;
 }
 
+.auth-profile-card {
+  justify-items: stretch;
+}
+
+.auth-profile-card .auth-copy {
+  margin-bottom: 6px;
+}
+
+.auth-profile-email {
+  margin: 0;
+  border-radius: 999px;
+  background: #f8eef3;
+  color: #55425a;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 850;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .auth-tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;

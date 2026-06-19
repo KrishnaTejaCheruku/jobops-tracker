@@ -54,6 +54,13 @@ export async function getCurrentUser() {
   });
 }
 
+export async function updateProfile(displayName) {
+  return request("/auth/profile", {
+    method: "PATCH",
+    body: JSON.stringify({ display_name: displayName }),
+  });
+}
+
 export async function logoutUser() {
   return request("/auth/logout", {
     method: "POST",

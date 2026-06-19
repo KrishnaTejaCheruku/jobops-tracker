@@ -12,6 +12,11 @@ const user = {
   email: "capture@example.com",
 };
 
+const namedUser = {
+  ...user,
+  display_name: "Capture User",
+};
+
 const capturePayload = {
   job_title: "DevOps Engineer",
   company_name: "Example GmbH",
@@ -38,6 +43,13 @@ describe("job capture flow", () => {
       statusCode: 200,
       body: { user },
     }).as("verifyOtp");
+    cy.intercept("PATCH", `${apiBaseUrl}/auth/profile`, (req) => {
+      expect(req.body).to.deep.equal({ display_name: "Capture User" });
+      req.reply({
+        statusCode: 200,
+        body: { user: namedUser },
+      });
+    }).as("updateProfile");
 
     cy.intercept("GET", `${apiBaseUrl}/applications*`, (req) => {
       req.reply({ statusCode: 200, body: paginatedApplications(applications) });
@@ -74,6 +86,10 @@ describe("job capture flow", () => {
     cy.get("#auth-otp").type("654321");
     cy.contains("button", "Verify and continue").click();
     cy.wait("@verifyOtp");
+    cy.contains("How should I call you?").should("be.visible");
+    cy.get("#auth-display-name").type("Capture User");
+    cy.contains("button", "Continue to JobOps").click();
+    cy.wait("@updateProfile");
 
     cy.wait(["@applications", "@cvVersions", "@analytics"]);
     cy.contains("Review captured job").should("be.visible");
@@ -90,7 +106,7 @@ describe("job capture flow", () => {
   });
 
   it("opens capture directly for an authenticated user and handles invalid payloads", () => {
-    cy.stubAuthSession(user);
+    cy.stubAuthSession(namedUser);
     cy.stubDashboardApis();
 
     cy.visit("/capture?payload=not-valid");

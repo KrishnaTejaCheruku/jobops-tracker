@@ -57,12 +57,34 @@ Request:
 Response sets an HttpOnly session cookie and returns:
 
 ```json
-{ "user": { "id": 1, "email": "user@example.com" } }
+{ "user": { "id": 1, "email": "user@example.com", "display_name": "" } }
 ```
 
 ### `GET /auth/me`
 
 Returns the current user when the session cookie is valid.
+
+Response:
+
+```json
+{ "user": { "id": 1, "email": "user@example.com", "display_name": "Teja" } }
+```
+
+### `PATCH /auth/profile`
+
+Updates the current user's profile after the session cookie is valid.
+
+Request:
+
+```json
+{ "display_name": "Teja" }
+```
+
+Response:
+
+```json
+{ "user": { "id": 1, "email": "user@example.com", "display_name": "Teja" } }
+```
 
 ### `POST /auth/logout`
 
