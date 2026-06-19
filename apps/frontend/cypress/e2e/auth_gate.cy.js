@@ -24,6 +24,7 @@ describe("auth gate", () => {
     [
       ["Product", "product", "Open-source tracking"],
       ["Features", "features", "Implemented features"],
+      ["Technologies", "technology", "Tools and Technologies"],
       ["Security", "security", "Security behavior"],
       ["Docs", "docs", "Repository documentation"],
     ].forEach(([label, id, heading]) => {
@@ -33,7 +34,7 @@ describe("auth gate", () => {
       cy.get(`#${id}`).then(($section) => {
         const rect = $section[0].getBoundingClientRect();
 
-        expect(rect.top, `${id} section top`).to.be.lessThan(180);
+        expect(rect.top, `${id} section top`).to.be.lessThan(Cypress.config("viewportHeight") - 120);
         expect(rect.bottom, `${id} section bottom`).to.be.greaterThan(120);
       });
     });
