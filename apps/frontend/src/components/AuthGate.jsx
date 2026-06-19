@@ -181,6 +181,7 @@ export default function AuthGate({ children }) {
             <nav className="auth-nav" aria-label="Product sections">
               <a href="#product">Product</a>
               <a href="#features">Features</a>
+              <a href="#technology">Technologies</a>
               <a href="#security">Security</a>
               <a href="#docs">Docs</a>
             </nav>
@@ -367,7 +368,7 @@ export default function AuthGate({ children }) {
               <h2>Implemented features from the current repository.</h2>
               <p>
                 The public landing page lists only behavior backed by the current
-                frontend, backend, extension, OCR service, infrastructure, and tests.
+                frontend, backend, extension, OCR service, and tests.
               </p>
             </div>
 
@@ -383,14 +384,42 @@ export default function AuthGate({ children }) {
                 "Dark/light mode",
                 "Browser extension capture",
                 "OCR-assisted extraction with review before save",
-                "Docker Compose development and production files",
-                "Kubernetes manifests, Helm chart, Ansible, and OpenTofu scaffolds",
               ].map((feature) => (
                 <article key={feature}>
                   <span aria-hidden="true">OK</span>
                   <strong>{feature}</strong>
                 </article>
               ))}
+            </div>
+          </section>
+
+          <section className="auth-section" id="technology" tabIndex="-1">
+            <div className="auth-section-copy">
+              <p className="auth-kicker">Technologies</p>
+              <h2>Tools and Technologies Used to Build JobOps.</h2>
+              <p>
+                The stack combines a focused React frontend, Go API, PostgreSQL
+                data layer, OCR service, browser extension, and automated tests.
+              </p>
+            </div>
+
+            <div className="auth-technology-grid">
+              <article>
+                <h3>Frontend</h3>
+                <p>React, Vite, responsive CSS, and Cypress coverage for user flows.</p>
+              </article>
+              <article>
+                <h3>Backend</h3>
+                <p>Go, Gin, PostgreSQL migrations, session handling, and API validation.</p>
+              </article>
+              <article>
+                <h3>Capture</h3>
+                <p>Manifest V3 browser extension plus a Python OCR extraction service.</p>
+              </article>
+              <article>
+                <h3>Quality</h3>
+                <p>Unit tests, integration checks, extension validation, and CI workflows.</p>
+              </article>
             </div>
           </section>
 
@@ -419,7 +448,7 @@ export default function AuthGate({ children }) {
               </article>
               <article>
                 <strong>Repository checks</strong>
-                <p>CI runs backend tests, frontend build and Cypress checks, extension validation, Docker image builds, and Helm rendering. Recent CodeQL findings are covered by focused regression tests.</p>
+                <p>CI runs backend tests, frontend build and Cypress checks, extension validation, and focused regression coverage for security-sensitive parsing paths.</p>
               </article>
             </div>
           </section>
@@ -427,7 +456,7 @@ export default function AuthGate({ children }) {
           <section className="auth-section" id="docs" tabIndex="-1">
             <div className="auth-section-copy">
               <p className="auth-kicker">Docs</p>
-              <h2>Repository documentation for users, developers, and operators.</h2>
+              <h2>Repository documentation for users and developers.</h2>
               <p>
                 Start with the documentation index or go directly to the guide
                 that matches the work in front of you.
@@ -448,33 +477,12 @@ export default function AuthGate({ children }) {
                 <a href="https://github.com/KrishnaTejaCheruku/jobops-tracker/blob/main/docs/testing.md">Testing</a>
               </article>
               <article>
-                <h3>Operations and deployment</h3>
-                <a href="https://github.com/KrishnaTejaCheruku/jobops-tracker/blob/main/docs/production-deployment.md">Production deployment</a>
-                <a href="https://github.com/KrishnaTejaCheruku/jobops-tracker/blob/main/docs/backup-restore.md">Backup and restore</a>
-                <a href="https://github.com/KrishnaTejaCheruku/jobops-tracker/blob/main/docs/monitoring.md">Monitoring</a>
-              </article>
-              <article>
                 <h3>Security</h3>
                 <a href="https://github.com/KrishnaTejaCheruku/jobops-tracker/blob/main/docs/security.md">Security guide</a>
                 <a href="https://github.com/KrishnaTejaCheruku/jobops-tracker/blob/main/SECURITY.md">Responsible disclosure</a>
-                <a href="https://github.com/KrishnaTejaCheruku/jobops-tracker">GitHub repository</a>
               </article>
             </div>
-
-            <div className="auth-doc-actions">
-              <a href="https://jobops.me">Live site: https://jobops.me</a>
-              <a href="https://github.com/KrishnaTejaCheruku/jobops-tracker">GitHub: jobops-tracker</a>
-            </div>
           </section>
-
-          <footer className="auth-public-footer">
-            <span>JobOps Tracker</span>
-            <a href="https://jobops.me">Live website</a>
-            <a href="https://github.com/KrishnaTejaCheruku/jobops-tracker">GitHub repository</a>
-            <a href="#docs">Documentation</a>
-            <a href="#security">Security</a>
-            <a href="https://github.com/KrishnaTejaCheruku/jobops-tracker/blob/main/LICENSE">Open source</a>
-          </footer>
         </section>
       </div>
     );
