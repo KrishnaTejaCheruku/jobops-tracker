@@ -85,7 +85,7 @@ a:hover {
   top: 0;
   height: 100vh;
   display: grid;
-  grid-template-rows: auto auto 1fr auto;
+  grid-template-rows: auto auto 1fr;
   gap: 26px;
   padding: 30px 24px;
   border-right: 1px solid var(--border-soft);
@@ -146,22 +146,12 @@ a:hover {
   color: var(--primary);
 }
 
-.dashboard-helper-card {
-  align-self: end;
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-md);
-  background: linear-gradient(145deg, #ffffff, #f5f6ff);
-  padding: 16px;
-}
-
-.dashboard-helper-card strong,
 .dashboard-sidebar-user strong {
   display: block;
   color: var(--text-main);
   font-size: 14px;
 }
 
-.dashboard-helper-card p,
 .dashboard-sidebar-user p {
   margin: 5px 0;
   color: var(--text-muted);
@@ -169,13 +159,8 @@ a:hover {
   font-weight: 700;
 }
 
-.dashboard-helper-card span {
-  color: var(--primary);
-  font-size: 13px;
-  font-weight: 900;
-}
-
 .dashboard-sidebar-user {
+  align-self: end;
   border-top: 1px solid var(--border-soft);
   padding-top: 18px;
 }
@@ -245,17 +230,6 @@ a:hover {
   justify-content: flex-end;
   gap: 10px;
   align-items: center;
-}
-
-.dashboard-icon-button {
-  width: 42px;
-  height: 42px;
-  border: 1px solid var(--border-soft);
-  border-radius: 999px;
-  background: white;
-  color: var(--primary);
-  font: inherit;
-  font-weight: 950;
 }
 
 .dashboard-avatar {
@@ -1645,10 +1619,6 @@ td small {
     justify-content: center;
   }
 
-  .dashboard-helper-card {
-    display: none;
-  }
-
   .dashboard-grid-top,
   .dashboard-grid-middle,
   .dashboard-grid-lower,
@@ -1709,7 +1679,6 @@ td small {
     justify-content: center;
   }
 
-  .dashboard-icon-button,
   .dashboard-avatar {
     display: none;
   }
@@ -2143,10 +2112,6 @@ html[data-theme="dark"] .dashboard-sidebar {
   border-color: var(--border-soft);
 }
 
-html[data-theme="dark"] .dashboard-helper-card {
-  background: linear-gradient(145deg, #111827, #172033);
-}
-
 html[data-theme="dark"] .dashboard-card,
 html[data-theme="dark"] .pipeline-navigation,
 html[data-theme="dark"] .pipeline-tile {
@@ -2161,7 +2126,6 @@ html[data-theme="dark"] .pipeline-tile {
 
 html[data-theme="dark"] .donut-chart > div,
 html[data-theme="dark"] .dashboard-search input,
-html[data-theme="dark"] .dashboard-icon-button,
 html[data-theme="dark"] .dashboard-avatar,
 html[data-theme="dark"] .pipeline-navigation select {
   background: #0b1220;
@@ -2186,7 +2150,6 @@ html[data-theme="dark"] .dashboard-list strong,
 html[data-theme="dark"] .cv-summary-list strong,
 html[data-theme="dark"] .dashboard-sidebar-brand strong,
 html[data-theme="dark"] .dashboard-sidebar-user strong,
-html[data-theme="dark"] .dashboard-helper-card strong,
 html[data-theme="dark"] .dashboard-greeting h1,
 html[data-theme="dark"] .pipeline-navigation h2 {
   color: var(--text-main);
